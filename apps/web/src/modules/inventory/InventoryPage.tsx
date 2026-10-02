@@ -609,7 +609,7 @@ export const InventoryPage: React.FC = () => {
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search item, brand, SKU..."
+                  placeholder="Search items by name, brand, SKU..."
                   value={itemSearch}
                   onChange={(e) => setItemSearch(e.target.value)}
                   className="w-full pl-9 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
@@ -622,6 +622,13 @@ export const InventoryPage: React.FC = () => {
                 className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none bg-white"
               >
                 <option value="ALL">All Categories</option>
+                <option value="General">General</option>
+                <option value="Equipment">Equipment</option>
+                <option value="Electronics & Electrical">Electronics & Electrical</option>
+                <option value="Mechanical & Hardware">Mechanical & Hardware</option>
+                <option value="Spare Parts & Components">Spare Parts & Components</option>
+                <option value="Consumables & Supplies">Consumables & Supplies</option>
+                <option value="Accessories & Tools">Accessories & Tools</option>
                 <option value="Filter">Filter</option>
                 <option value="Membrane">Membrane</option>
                 <option value="Pump">Pump</option>
@@ -776,7 +783,7 @@ export const InventoryPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-12 text-center text-xs text-gray-400">
-                No items found. Click "+ Add Item" to register your first spare part or accessory.
+                No items found. Click "+ Add Item" to register your first inventory item.
               </div>
             )}
           </div>

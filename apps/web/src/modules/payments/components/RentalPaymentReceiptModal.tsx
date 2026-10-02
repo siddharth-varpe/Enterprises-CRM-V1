@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '../../../components/ui/Button';
 import { formatDate } from '../../../lib/formatters';
 import type { RentalPaymentListItem } from '../../rentals/rentals.api';
-import { OFFICIAL_LOWER_SECTION_B64, SR_ENTERPRISES_LOGO_B64 } from '../../../assets/invoiceAssets';
+import { OFFICIAL_LOWER_SECTION_B64, CRM_OFFICIAL_LOGO_B64 } from '../../../assets/invoiceAssets';
 import { X, Printer } from 'lucide-react';
 
 interface RentalPaymentReceiptModalProps {
@@ -24,7 +24,7 @@ export const RentalPaymentReceiptModal: React.FC<RentalPaymentReceiptModalProps>
 
   // Customer & Document Data
   const customerName = (payment.customerName || 'Valued Customer').toUpperCase();
-  const customerPhone = payment.customerPhone || '9766039197';
+  const customerPhone = payment.customerPhone || 'N/A';
   const receiptNo = payment.receiptNumber || `RCP-RNT-${new Date(payment.paymentDate).getFullYear()}-0001`;
   const paymentDate = formatDate(payment.paymentDate);
   const nextDueDate = payment.nextDueDate ? formatDate(payment.nextDueDate) : 'N/A';
@@ -49,11 +49,11 @@ export const RentalPaymentReceiptModal: React.FC<RentalPaymentReceiptModalProps>
     ? 'Advance Rent Payment'
     : 'Monthly Rent Subscription';
 
-  const itemDescription = `Water Purifier RO Machine Rental (${paymentTypeTitle}) — ${payment.machineModel} (Agreement: ${payment.rentalNumber}, Serial: ${payment.serialNumber})`;
+  const itemDescription = `Equipment / Product Rental (${paymentTypeTitle}) — ${payment.machineModel} (Agreement: ${payment.rentalNumber}, Serial: ${payment.serialNumber})`;
 
   const notesText = payment.notes
     ? `Rental payment for agreement ${payment.rentalNumber}. ${payment.notes}`
-    : `Rental payment for agreement ${payment.rentalNumber} (${paymentTypeTitle}). 1 Year Warranty On Electric Spares & Regular Periodic Maintenance.`;
+    : `Rental payment for agreement ${payment.rentalNumber} (${paymentTypeTitle}). Standard warranty & regular periodic maintenance included.`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-fast print:p-0 print:bg-transparent print:static">
@@ -105,15 +105,15 @@ export const RentalPaymentReceiptModal: React.FC<RentalPaymentReceiptModalProps>
             <div className="flex items-center justify-between mb-3 pb-2">
               <div className="w-16 shrink-0 flex items-center justify-center">
                 <img
-                  src={SR_ENTERPRISES_LOGO_B64}
-                  alt="SR Enterprises Logo"
+                  src={CRM_OFFICIAL_LOGO_B64}
+                  alt="Enterprises CRM Logo"
                   className="w-14 h-14 object-contain select-none"
                 />
               </div>
 
               <div className="text-center flex-1 px-2">
                 <h1 className="text-xl font-extrabold tracking-wide uppercase text-black font-sans">
-                  SR ENTERPRISES
+                  ENTERPRISES CRM
                 </h1>
                 <p className="text-[10px] text-slate-800 font-medium mt-0.5">
                   Shop A6 SaiPritam Nagari, Chatrapati Chowk Rahatani. Mo.7385059197, Pimpri-Chinchwad, Pune., Maharashtra, 411017
@@ -211,11 +211,11 @@ export const RentalPaymentReceiptModal: React.FC<RentalPaymentReceiptModalProps>
                 <strong>Notes:</strong>&nbsp;{notesText}
               </div>
 
-              {/* PART B: Static Official SR Enterprises Lower Section Image */}
+              {/* PART B: Static Official Enterprises CRM Lower Section Image */}
               <div className="w-full bg-white leading-none">
                 <img
                   src={OFFICIAL_LOWER_SECTION_B64}
-                  alt="Official SR Enterprises Bank, QR, Terms & Signatory"
+                  alt="Official Enterprises CRM Bank, QR, Terms & Signatory"
                   className="w-full h-auto block select-none"
                 />
               </div>

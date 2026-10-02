@@ -147,11 +147,19 @@ export function buildApp(opts: FastifyServerOptions = {}): FastifyInstance {
   fastify.register(v1Routes, { prefix: API_PREFIX });
 
   // 9. Static SPA Serving for Desktop & Production
-  const webDistPath = path.resolve(__dirname, '../../web/dist');
+  const candidateDistPaths = [
+    path.resolve(__dirname, '../../web/dist'),
+    path.resolve(process.cwd(), 'apps/web/dist'),
+    path.resolve(process.cwd(), 'dist'),
+    path.resolve(process.cwd(), '../web/dist'),
+  ];
+  const webDistPath = candidateDistPaths.find((p) => fs.existsSync(p)) || candidateDistPaths[0]!;
   if (fs.existsSync(webDistPath)) {
     fastify.register(fastifyStatic, {
       root: webDistPath,
       prefix: '/',
+      index: false,
+      cacheControl: false,
       decorateReply: true,
       setHeaders: (res, pathName) => {
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -161,10 +169,11 @@ export function buildApp(opts: FastifyServerOptions = {}): FastifyInstance {
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         } else if (
           pathName.endsWith('.html') ||
+          pathName.includes('sw-') ||
           pathName.endsWith('sw.js') ||
-          pathName.endsWith('manifest.webmanifest')
+          pathName.endsWith('.webmanifest')
         ) {
-          // HTML, service worker, and webmanifest must revalidate
+          // HTML, service workers, and webmanifests must revalidate
           res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
         } else {
           // Favicons, icons, and static images cached for 1 day
@@ -173,10 +182,57 @@ export function buildApp(opts: FastifyServerOptions = {}): FastifyInstance {
       },
     });
 
+    let cachedIndexHtml: string | null = null;
+    let cachedTechIndexHtml: string | null = null;
+
+    const getHtmlForPath = (targetUrl: string): string => {
+      const indexPath = path.join(webDistPath, 'index.html');
+      if (!cachedIndexHtml && fs.existsSync(indexPath)) {
+        cachedIndexHtml = fs.readFileSync(indexPath, 'utf8');
+        cachedTechIndexHtml = cachedIndexHtml
+          .replace('href="/manifest-admin.webmanifest"', 'href="/manifest-technician.webmanifest"')
+          .replace('id="app-apple-title" content="CRM"', 'id="app-apple-title" content="Technician"')
+          .replace('id="app-name-meta" content="Enterprises CRM"', 'id="app-name-meta" content="Enterprises Technician"')
+          .replace('id="app-apple-icon" href="/apple-touch-icon.png"', 'id="app-apple-icon" href="/apple-touch-icon-technician.png"')
+          .replace('<title id="app-title">Enterprises CRM</title>', '<title id="app-title">Enterprises Technician</title>');
+      }
+      return targetUrl.startsWith('/technician')
+        ? (cachedTechIndexHtml || cachedIndexHtml || '')
+        : (cachedIndexHtml || '');
+    };
+
+    fastify.get('/', (request, reply) => {
+      reply.header('Cache-Control', 'public, max-age=0, must-revalidate');
+      reply.header('Content-Type', 'text/html; charset=utf-8');
+      return reply.send(getHtmlForPath('/'));
+    });
+
+    fastify.get('/technician', (request, reply) => {
+      reply.header('Cache-Control', 'public, max-age=0, must-revalidate');
+      reply.header('Content-Type', 'text/html; charset=utf-8');
+      return reply.send(getHtmlForPath('/technician'));
+    });
+
+    fastify.get('/technician/', (request, reply) => {
+      reply.header('Cache-Control', 'public, max-age=0, must-revalidate');
+      reply.header('Content-Type', 'text/html; charset=utf-8');
+      return reply.send(getHtmlForPath('/technician/'));
+    });
+
     fastify.setNotFoundHandler((request, reply) => {
       const url = request.raw.url || '';
-      if (!url.startsWith(API_PREFIX) && !url.startsWith('/health') && !url.startsWith('/ready')) {
+      if (
+        !url.startsWith(API_PREFIX) &&
+        !url.startsWith('/health') &&
+        !url.startsWith('/ready') &&
+        !url.startsWith('/socket.io')
+      ) {
         reply.header('Cache-Control', 'public, max-age=0, must-revalidate');
+        reply.header('Content-Type', 'text/html; charset=utf-8');
+        const html = getHtmlForPath(url);
+        if (html) {
+          return reply.send(html);
+        }
         return reply.sendFile('index.html');
       }
       return reply.status(404).send({

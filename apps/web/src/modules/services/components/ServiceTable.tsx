@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataTable, type ColumnDef } from '../../../components/ui/DataTable';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { Button } from '../../../components/ui/Button';
+import { HoldStatusModal, type HoldStatusData } from '../../../components/ui/HoldStatusModal';
 import {
   Wrench,
   User,
@@ -17,6 +18,7 @@ import {
   Send,
   Trash2,
   Pencil,
+  PauseCircle,
 } from 'lucide-react';
 import {
   useNotifyServiceTechnicianWhatsAppMutation,
@@ -96,6 +98,7 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
   const notifyWhatsAppMutation = useNotifyServiceTechnicianWhatsAppMutation();
   const notifyCustomerWhatsAppMutation = useNotifyServiceCustomerWhatsAppMutation();
   const deleteServiceMutation = useDeleteServiceMutation();
+  const [selectedHoldService, setSelectedHoldService] = useState<HoldStatusData | null>(null);
 
   const handleNotifyCustomerWhatsApp = async (row: ServiceItem) => {
     try {
@@ -116,7 +119,7 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
         const dateDisplay = formatSystemDate(row.scheduledDate);
         const timeDisplay = formatSystemTime(row.scheduledDate, row.scheduledTimeSlot);
         const techInfo = row.technicianPhone ? `${row.technicianName || 'Specialist'} (${row.technicianPhone})` : (row.technicianName || 'Assigned Technician');
-        const msg = `Hello ${row.customerName || 'Valued Customer'},\n\nYour service visit with SR Enterprises has been confirmed!\n\nService #: ${row.serviceNumber}\nMachine: ${row.productName || 'RO Purifier'}${row.serialNumber ? ` (SN: ${row.serialNumber})` : ''}\nDate: ${dateDisplay}\nTime Slot: ${timeDisplay}\nAssigned Technician: ${techInfo}\n\nOur technician will contact you prior to arrival. Thank you!`;
+        const msg = `Hello ${row.customerName || 'Valued Customer'},\n\nYour service visit with Enterprises CRM has been confirmed!\n\nService #: ${row.serviceNumber}\nProduct: ${row.productName || 'Product / Equipment'}${row.serialNumber ? ` (SN: ${row.serialNumber})` : ''}\nDate: ${dateDisplay}\nTime Slot: ${timeDisplay}\nAssigned Technician: ${techInfo}\n\nOur technician will contact you prior to arrival. Thank you!`;
         const directUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
         if (typeof window !== 'undefined') {
           window.open(directUrl, '_blank', 'noopener,noreferrer');
@@ -211,21 +214,31 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
     {
       key: 'asset',
       header: 'Machine / Asset',
-      render: (row: ServiceItem) => (
-        <div>
-          <div className="font-semibold text-slate-900 text-xs flex items-center gap-1">
-            <Cpu className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            {row.productName || 'RO Machine'}
+      render: (row: ServiceItem) => {
+        const rawName = row.productName || (row as any).customName || (row as any).customAssetName;
+        const displayName =
+          rawName && rawName.toLowerCase() !== 'customer ro water purifier'
+            ? rawName
+            : row.productBrand
+            ? `${row.productBrand} RO System`
+            : 'RO Machine';
+
+        return (
+          <div>
+            <div className="font-semibold text-slate-900 text-xs flex items-center gap-1">
+              <Cpu className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              {displayName}
+            </div>
+            <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+              {row.serialNumber ? (
+                <span className="font-semibold text-slate-700">SN: {row.serialNumber}</span>
+              ) : (
+                <span className="italic text-slate-400">Non-serialized</span>
+              )}
+            </div>
           </div>
-          <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-            {row.serialNumber ? (
-              <span className="font-semibold text-slate-700">SN: {row.serialNumber}</span>
-            ) : (
-              <span className="italic text-slate-400">Non-serialized</span>
-            )}
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'classification',
@@ -335,7 +348,7 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
                       const cleanPhone = phone.length === 10 ? `91${phone}` : (phone.length === 11 && !phone.startsWith('91') ? `91${phone}` : phone);
                       const dateDisplay = formatSystemDate(row.scheduledDate);
                       const timeDisplay = formatSystemTime(row.scheduledDate, row.scheduledTimeSlot);
-                      const msg = `New Service Job Assigned\n\nCustomer: ${row.customerName || 'Valued Customer'}\nCustomer Phone: ${row.customerPhone || 'N/A'}\nMachine/Product: ${row.productName || 'RO Purifier'}\nSerial Number: ${row.serialNumber || 'N/A'}\nService Type: ${row.serviceType || 'Periodic Maintenance'}\nVisit Date: ${dateDisplay}\nTime Slot: ${timeDisplay}\nLocation: ${row.serviceLocation === 'IN_SHOP' ? 'In-Shop' : 'Doorstep'}\nPriority: ${row.priority || 'Normal'}\n\nService #: ${row.serviceNumber}\n\nPlease check the CRM for complete job details.`;
+                      const msg = `New Service Job Assigned\n\nCustomer: ${row.customerName || 'Valued Customer'}\nCustomer Phone: ${row.customerPhone || 'N/A'}\nProduct: ${row.productName || 'Product / Equipment'}\nSerial Number: ${row.serialNumber || 'N/A'}\nService Type: ${row.serviceType || 'Periodic Maintenance'}\nVisit Date: ${dateDisplay}\nTime Slot: ${timeDisplay}\nLocation: ${row.serviceLocation === 'IN_SHOP' ? 'In-Shop' : 'Doorstep'}\nPriority: ${row.priority || 'Normal'}\n\nService #: ${row.serviceNumber}\n\nPlease check the CRM for complete job details.`;
                       const directUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
                       if (typeof window !== 'undefined') {
                         window.open(directUrl, '_blank', 'noopener,noreferrer');
@@ -368,12 +381,42 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
     {
       key: 'status',
       header: 'Status',
-      render: (row: ServiceItem) => (
-        <StatusBadge
-          status={statusVariantMap[row.status] || 'active'}
-          label={(row.status || 'SCHEDULED').replace(/_/g, ' ')}
-        />
-      ),
+      render: (row: ServiceItem) => {
+        const isOnHold = row.status === 'ON_HOLD' || row.jobCardStatus === 'ON_HOLD';
+        if (isOnHold) {
+          const holdNotes = row.jobCardTechnicianNotes || row.technicianNotes || row.internalNotes;
+          return (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedHoldService({
+                  serviceNumber: row.serviceNumber,
+                  jobCardNumber: row.jobCardNumber,
+                  technicianName: row.technicianName,
+                  technicianPhone: row.technicianPhone,
+                  customerName: row.customerName,
+                  notes: holdNotes,
+                  updatedAt: (row as any).updatedAt || row.createdAt,
+                });
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer shadow-xs group"
+              title="Click to view hold status note"
+            >
+              <PauseCircle className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform shrink-0" />
+              <span>On Hold</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            </button>
+          );
+        }
+
+        return (
+          <StatusBadge
+            status={statusVariantMap[row.status] || 'active'}
+            label={(row.status || 'SCHEDULED').replace(/_/g, ' ')}
+          />
+        );
+      },
     },
     {
       key: 'actions',
@@ -444,21 +487,29 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-      <DataTable<ServiceItem>
-        columns={columns}
-        data={services}
-        isLoading={isLoading}
-        keyExtractor={(item) => item.id}
-        pagination={{
-          page: pagination.page,
-          pageSize: pagination.limit || 10,
-          total: pagination.total,
-        }}
-        onPageChange={onPageChange}
-        emptyTitle="No services found"
-        emptyDescription="Schedule a periodic filter check, repair visit, or maintenance service to get started."
+    <>
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+        <DataTable<ServiceItem>
+          columns={columns}
+          data={services}
+          isLoading={isLoading}
+          keyExtractor={(item) => item.id}
+          pagination={{
+            page: pagination.page,
+            pageSize: pagination.limit || 10,
+            total: pagination.total,
+          }}
+          onPageChange={onPageChange}
+          emptyTitle="No services found"
+          emptyDescription="Schedule a periodic filter check, repair visit, or maintenance service to get started."
+        />
+      </div>
+
+      <HoldStatusModal
+        isOpen={Boolean(selectedHoldService)}
+        onClose={() => setSelectedHoldService(null)}
+        data={selectedHoldService}
       />
-    </div>
+    </>
   );
 };

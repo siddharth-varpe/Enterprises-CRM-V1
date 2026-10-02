@@ -527,13 +527,23 @@ export class JobCardsRepository {
           updateData.startedAt = now;
         } else if (action === 'hold') {
           targetStatus = 'ON_HOLD';
+          serviceTargetStatus = 'ON_HOLD';
+          const reason = (actionInput as any).reason || (actionInput as any).holdReason;
+          if (reason && typeof reason === 'string' && reason.trim()) {
+            const holdNote = `[Hold reason]: ${reason.trim()}`;
+            updateData.technicianNotes = existing.technicianNotes
+              ? `${existing.technicianNotes}\n${holdNote}`
+              : holdNote;
+          }
         } else if (action === 'resume') {
           targetStatus = 'IN_PROGRESS';
+          serviceTargetStatus = 'IN_PROGRESS';
         } else if (action === 'cancel') {
           targetStatus = 'CANCELLED';
           serviceTargetStatus = 'CANCELLED';
         } else if (action === 'reopen') {
           targetStatus = 'IN_PROGRESS';
+          serviceTargetStatus = 'IN_PROGRESS';
         }
 
         updateData.status = targetStatus;
@@ -544,6 +554,10 @@ export class JobCardsRepository {
           .where(eq(jobCards.id, id))
           .returning();
 
+        if (!updated) {
+          throw new Error('Not found in DB, fallback to memory');
+        }
+
         if (serviceTargetStatus) {
           await tx
             .update(services)
@@ -552,15 +566,29 @@ export class JobCardsRepository {
               updatedAt: now,
             })
             .where(eq(services.id, existing.serviceId));
+
+          const memService = memoryServices.find((s) => s.id === existing.serviceId);
+          if (memService) {
+            memService.status = serviceTargetStatus;
+            (memService as any).jobCardStatus = targetStatus;
+            memService.updatedAt = now;
+            if (updateData.technicianNotes) {
+              (memService as any).jobCardTechnicianNotes = updateData.technicianNotes;
+            }
+          }
+        }
+
+        const memJob = memoryJobCards.find((j) => j.id === id);
+        if (memJob) {
+          Object.assign(memJob, updateData);
         }
 
         return updated;
       });
     } catch (err: any) {
-      if (err.statusCode) throw err;
-
       const target = memoryJobCards.find((j) => j.id === id);
       if (!target) {
+        if (err.statusCode) throw err;
         const notFound: any = new Error('Job Card not found');
         notFound.statusCode = 404;
         throw notFound;
@@ -568,19 +596,45 @@ export class JobCardsRepository {
 
       const action = actionInput.action.toLowerCase();
       const now = new Date();
+      let serviceTargetStatus: any = null;
       if (action === 'start') {
         target.status = 'IN_PROGRESS';
+        serviceTargetStatus = 'IN_PROGRESS';
         target.startedAt = now;
       } else if (action === 'hold') {
         target.status = 'ON_HOLD';
+        serviceTargetStatus = 'ON_HOLD';
+        const reason = (actionInput as any).reason || (actionInput as any).holdReason;
+        if (reason && typeof reason === 'string' && reason.trim()) {
+          const holdNote = `[Hold reason]: ${reason.trim()}`;
+          target.technicianNotes = target.technicianNotes
+            ? `${target.technicianNotes}\n${holdNote}`
+            : holdNote;
+        }
       } else if (action === 'resume') {
         target.status = 'IN_PROGRESS';
+        serviceTargetStatus = 'IN_PROGRESS';
       } else if (action === 'cancel') {
         target.status = 'CANCELLED';
+        serviceTargetStatus = 'CANCELLED';
       } else if (action === 'reopen') {
         target.status = 'IN_PROGRESS';
+        serviceTargetStatus = 'IN_PROGRESS';
       }
       target.updatedAt = now;
+
+      if (serviceTargetStatus) {
+        const memService = memoryServices.find((s) => s.id === target.serviceId);
+        if (memService) {
+          memService.status = serviceTargetStatus;
+          (memService as any).jobCardStatus = target.status;
+          memService.updatedAt = now;
+          if (target.technicianNotes) {
+            (memService as any).jobCardTechnicianNotes = target.technicianNotes;
+          }
+        }
+      }
+
       return target;
     }
   }

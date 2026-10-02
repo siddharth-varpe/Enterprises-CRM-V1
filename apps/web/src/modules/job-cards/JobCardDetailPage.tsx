@@ -29,6 +29,8 @@ import { useTechniciansQuery } from '../technicians/technicians.api';
 import { useToast } from '../../providers/ToastProvider';
 import { AssignTechnicianModal } from './components/AssignTechnicianModal';
 import { CompleteJobCardModal } from './components/CompleteJobCardModal';
+import { HoldStatusModal, extractHoldReason } from '../../components/ui/HoldStatusModal';
+import { PauseCircle } from 'lucide-react';
 
 export const JobCardDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -40,6 +42,7 @@ export const JobCardDetailPage: React.FC = () => {
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isCompleteOpen, setIsCompleteOpen] = useState(false);
+  const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [whatsappFeedback, setWhatsappFeedback] = useState<{ type: 'success' | 'error'; message: string; directUrl?: string } | null>(null);
 
@@ -133,7 +136,18 @@ export const JobCardDetailPage: React.FC = () => {
       case 'IN_PROGRESS':
         return <span className="px-3 py-1 bg-amber-50 text-amber-700 font-bold rounded-full text-xs border border-amber-200 animate-pulse">In Progress</span>;
       case 'ON_HOLD':
-        return <span className="px-3 py-1 bg-orange-50 text-orange-700 font-bold rounded-full text-xs border border-orange-200">On Hold</span>;
+        return (
+          <button
+            type="button"
+            onClick={() => setIsHoldModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-900 font-bold rounded-full text-xs border border-amber-300 hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer shadow-xs group"
+            title="Click to view hold status note"
+          >
+            <PauseCircle className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform shrink-0" />
+            <span>On Hold</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+          </button>
+        );
       case 'COMPLETED':
       case 'CLOSED':
         return <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-bold rounded-full text-xs border border-emerald-200">Completed</span>;
@@ -260,6 +274,35 @@ export const JobCardDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* On Hold Alert Banner */}
+      {jobCard.status === 'ON_HOLD' && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/20">
+              <PauseCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-900">Job Card is Currently On Hold</h4>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                  ON HOLD
+                </span>
+              </div>
+              <p className="text-xs text-slate-700 mt-1 font-medium">
+                {extractHoldReason(jobCard.technicianNotes || (jobCard as any).internalNotes).reason}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsHoldModalOpen(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-900 font-bold text-xs hover:bg-amber-100/70 transition-colors cursor-pointer shrink-0 shadow-xs"
+          >
+            View Hold Note
+          </button>
+        </div>
+      )}
 
       {actionError && (
         <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center gap-2">
@@ -614,6 +657,20 @@ export const JobCardDetailPage: React.FC = () => {
         isOpen={isCompleteOpen}
         onClose={() => setIsCompleteOpen(false)}
         jobCard={jobCard as any}
+      />
+
+      <HoldStatusModal
+        isOpen={isHoldModalOpen}
+        onClose={() => setIsHoldModalOpen(false)}
+        data={{
+          serviceNumber: jobCard.serviceNumber,
+          jobCardNumber: jobCard.jobCardNumber,
+          technicianName: jobCard.technicianName,
+          technicianPhone: jobCard.technicianPhone,
+          customerName: jobCard.customerName,
+          notes: jobCard.technicianNotes || (jobCard as any).internalNotes,
+          updatedAt: jobCard.updatedAt,
+        }}
       />
     </div>
   );

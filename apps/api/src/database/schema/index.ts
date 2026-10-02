@@ -30,6 +30,7 @@ export * from './workflows';
 export * from './rentals';
 export * from './inventory-items';
 export * from './chatbot';
+export * from './technician-portal';
 
 // Export all Relations
 export * from './relations';

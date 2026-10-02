@@ -67,6 +67,16 @@ export async function startServer() {
       port: env.PORT,
       host: env.HOST,
     });
+
+    // Initialize Google Maps & Technician Live Tracking Socket.IO server
+    try {
+      const { initMapsSocketServer } = await import('./modules/maps/maps-socket.service.js');
+      initMapsSocketServer(app.server);
+      console.log('🗺️ Google Maps & Technician Live Tracking Socket.IO initialized.');
+    } catch (socketErr) {
+      console.warn('⚠️ Warning: Maps Socket.IO initialization notice:', socketErr);
+    }
+
     console.log(`\n🚀 SR Enterprises CRM API running at: ${address}`);
     console.log(`📋 Health check: ${address}/health`);
     console.log(`📋 Readiness probe: ${address}/ready`);

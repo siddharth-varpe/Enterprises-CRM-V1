@@ -62,6 +62,10 @@ vi.mock('./technicians.api', () => ({
     mutateAsync: mockDeleteMutateAsync,
     isPending: false,
   }),
+  useTogglePortalAccessMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
 }));
 
 const mockDeleteMutateAsync = vi.fn().mockResolvedValue({ success: true });

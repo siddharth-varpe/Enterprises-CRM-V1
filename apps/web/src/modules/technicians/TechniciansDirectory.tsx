@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   useTechniciansQuery,
   useTechnicianKPIsQuery,
@@ -11,15 +11,22 @@ import { TechnicianToolbar } from './components/TechnicianToolbar';
 import { TechnicianTable } from './components/TechnicianTable';
 import { TechnicianModal } from './components/TechnicianModal';
 import { TechnicianDetailDrawer } from './components/TechnicianDetailDrawer';
+import { AdminLiveTechnicianMap } from './components/AdminLiveTechnicianMap';
 import { Pagination } from '../../components/ui/Pagination';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { useToast } from '../../providers/ToastProvider';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Users, Navigation } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 export const TechniciansDirectory: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
+
+  const [viewMode, setViewMode] = useState<'roster' | 'map'>(() => {
+    return location.pathname.endsWith('/map') ? 'map' : 'roster';
+  });
 
   // Filter States
   const [page, setPage] = useState(1);
@@ -100,55 +107,94 @@ export const TechniciansDirectory: React.FC = () => {
             Manage field service engineers, skill sets, live job dispatch, and operational availability.
           </p>
         </div>
+
+        {/* View Switcher: Roster Directory vs Live Field Map */}
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setViewMode('roster')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer',
+              viewMode === 'roster'
+                ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/80'
+                : 'text-slate-600 hover:text-slate-900'
+            )}
+          >
+            <Users className="w-3.5 h-3.5 text-slate-500" />
+            <span>Roster Directory</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('map')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer',
+              viewMode === 'map'
+                ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/80'
+                : 'text-slate-600 hover:text-slate-900'
+            )}
+          >
+            <Navigation className="w-3.5 h-3.5 text-primary-600" />
+            <span>Live Field Map</span>
+          </button>
+        </div>
       </div>
 
-      {/* KPI Workforce Cards */}
-      <TechnicianSummaryCards
-        kpis={kpis}
-        isLoading={isKPIsLoading}
-        activeFilter={status}
-        onFilterSelect={handleStatusFilterSelect}
-      />
-
-      {/* Toolbar */}
-      <TechnicianToolbar
-        search={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setPage(1);
-        }}
-        status={status}
-        onStatusChange={(val) => {
-          setStatus(val);
-          setPage(1);
-        }}
-        onCreateClick={handleCreate}
-        onRefresh={() => refetch()}
-        isFetching={isFetching}
-      />
-
-      {/* Table */}
-      <TechnicianTable
-        technicians={techniciansData?.data}
-        isLoading={isLoading}
-        onViewDetail={(tech) => setSelectedTech(tech)}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
-
-      {/* Pagination */}
-      {techniciansData?.pagination && (
-        <Pagination
-          currentPage={techniciansData.pagination.page}
-          totalPages={techniciansData.pagination.totalPages}
-          totalItems={techniciansData.pagination.total}
-          pageSize={limit}
-          onPageChange={setPage}
-          onPageSizeChange={(newLimit: number) => {
-            setLimit(newLimit);
-            setPage(1);
-          }}
+      {viewMode === 'map' ? (
+        <AdminLiveTechnicianMap
+          onViewJobCard={(jcId) => navigate(`/job-cards/${jcId}`)}
         />
+      ) : (
+        <>
+          {/* KPI Workforce Cards */}
+          <TechnicianSummaryCards
+            kpis={kpis}
+            isLoading={isKPIsLoading}
+            activeFilter={status}
+            onFilterSelect={handleStatusFilterSelect}
+          />
+
+          {/* Toolbar */}
+          <TechnicianToolbar
+            search={search}
+            onSearchChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            status={status}
+            onStatusChange={(val) => {
+              setStatus(val);
+              setPage(1);
+            }}
+            onCreateClick={handleCreate}
+            onRefresh={() => refetch()}
+            isFetching={isFetching}
+          />
+
+          {/* Table */}
+          <TechnicianTable
+            technicians={techniciansData?.data}
+            isLoading={isLoading}
+            onViewProfile={(tech) => navigate(`/technicians/${tech.id}`)}
+            onViewDetail={(tech) => setSelectedTech(tech)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+
+          {/* Pagination */}
+          {techniciansData?.pagination && (
+            <Pagination
+              currentPage={techniciansData.pagination.page}
+              totalPages={techniciansData.pagination.totalPages}
+              totalItems={techniciansData.pagination.total}
+              pageSize={limit}
+              onPageChange={setPage}
+              onPageSizeChange={(newLimit: number) => {
+                setLimit(newLimit);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
 
       {/* Create / Edit Modal */}
@@ -228,6 +274,7 @@ export const TechniciansDirectory: React.FC = () => {
           handleEdit(tech);
         }}
         onViewJobCard={(jcId) => navigate(`/job-cards/${jcId}`)}
+        onViewProfile={(tech) => navigate(`/technicians/${tech.id}`)}
       />
     </div>
   );

@@ -108,6 +108,14 @@ const envSchema = z.object({
   SUPPORT_PHONE: z.string().default('+91 73850 59197'),
   MAIL_DRIVER: z.string().optional(),
   MOCK_MAIL: z.string().optional(),
+
+  // Google Maps Platform Integration
+  MAP_ID: z.string().optional(),
+  ROUTES_API_KEY: z.string().optional(),
+  MAPS_JAVASCRIPT_API_KEY: z.string().optional(),
+  GOOGLE_MAPS_SERVER_API_KEY: z.string().optional(),
+  GOOGLE_MAPS_BROWSER_API_KEY: z.string().optional(),
+  GOOGLE_MAPS_MAP_ID: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
@@ -119,6 +127,17 @@ export function parseEnv(customEnv?: Record<string, string | undefined>): EnvCon
   // Normalize DATABASE_URL across standard PostgreSQL variable names
   if (!source.DATABASE_URL && source.POSTGRES_URL) {
     source.DATABASE_URL = source.POSTGRES_URL;
+  }
+
+  // Normalize Google Maps Platform credentials from maps_credentials.md or standard names
+  if (!source.GOOGLE_MAPS_SERVER_API_KEY && source.ROUTES_API_KEY) {
+    source.GOOGLE_MAPS_SERVER_API_KEY = source.ROUTES_API_KEY;
+  }
+  if (!source.GOOGLE_MAPS_BROWSER_API_KEY && source.MAPS_JAVASCRIPT_API_KEY) {
+    source.GOOGLE_MAPS_BROWSER_API_KEY = source.MAPS_JAVASCRIPT_API_KEY;
+  }
+  if (!source.GOOGLE_MAPS_MAP_ID && source.MAP_ID) {
+    source.GOOGLE_MAPS_MAP_ID = source.MAP_ID;
   }
 
   const result = envSchema.safeParse(source);

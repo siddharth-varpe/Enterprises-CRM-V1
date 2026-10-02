@@ -1,75 +1,9 @@
 import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
-
 export default defineConfig({
   plugins: [
     react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: [
-        'favicon.ico',
-        'apple-touch-icon.png',
-        'pwa-192x192.png',
-        'pwa-512x512.png',
-        'pwa-maskable-512x512.png',
-      ],
-      manifest: {
-        name: 'SR Enterprises CRM',
-        short_name: 'SR CRM',
-        description: 'Commercial-grade SaaS for RO sales, service, warranty & job card management',
-        theme_color: '#0B132B',
-        background_color: '#0B132B',
-        display: 'standalone',
-        orientation: 'any',
-        scope: '/',
-        start_url: '/',
-        icons: [
-          {
-            src: '/pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: '/pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: '/pwa-maskable-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
-        ],
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        globIgnores: ['**/invoice-assets-*.js'],
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/api\//, /^\/health/, /^\/ready/],
-        runtimeCaching: [
-          {
-            urlPattern: /^\/api\/.*$/,
-            handler: 'NetworkOnly',
-          },
-          {
-            urlPattern: /.*invoice-assets-.*\.js$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'invoice-assets-cache',
-              expiration: {
-                maxEntries: 5,
-                maxAgeSeconds: 30 * 24 * 60 * 60,
-              },
-            },
-          },
-        ],
-      },
-    }),
   ],
   resolve: {
     alias: {

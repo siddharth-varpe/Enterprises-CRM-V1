@@ -31,7 +31,7 @@ $subject = "Payment Receipt & Invoice — " . $cleanInvoiceNo . " — {$companyN
 // Plain Text fallback
 $plainText = "Hello {$customerDisplayName},
 
-Thank you for your payment. We truly appreciate your trust in SR Enterprises.
+Thank you for your payment. We truly appreciate your trust in {$companyName}.
 
 PAYMENT RECEIVED
 --------------------------------------------------
@@ -51,12 +51,12 @@ Payment Status: {$displayStatus}
 
 Your official bill/receipt is attached to this email as a PDF.
 
-Services Offered: RO Repairing Services | RO Sales | Spare Parts | AMC
+Services Offered: Professional Repair Services | Equipment Sales | Spare Parts | AMC
 
 Need Assistance?
 Helpline: {$supportPhone}
 Email: {$supportEmail}
-SR Enterprises — Reliable Solutions. Pure Performance.
+{$companyName} — Reliable Solutions. Professional Service.
 ";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -89,14 +89,14 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                                 <table border="0" cellpadding="0" cellspacing="0">
                                     <tr>
                                         <td style="width: 40px; height: 40px; background-color: #0B63F6; border-radius: 8px; text-align: center; vertical-align: middle; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: bold; color: #FFFFFF;">
-                                            SR
+                                            CRM
                                         </td>
                                         <td style="padding-left: 12px; vertical-align: middle;">
                                             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 17px; font-weight: bold; color: #FFFFFF; letter-spacing: 0.5px; line-height: 1.2;">
-                                                SR ENTERPRISES
+                                                <?php echo htmlspecialchars($companyName); ?>
                                             </div>
                                             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #93C5FD; margin-top: 2px;">
-                                                Reliable Solutions. Pure Performance.
+                                                Reliable Solutions. Professional Service.
                                             </div>
                                         </td>
                                     </tr>
@@ -120,7 +120,7 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                         Hello <?php echo htmlspecialchars($customerDisplayName); ?>,
                     </div>
                     <div style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 20px;">
-                        Thank you for your payment. We truly appreciate your trust in <strong>SR Enterprises</strong>. Your payment details have been recorded below.
+                        Thank you for your payment. We truly appreciate your trust in <strong><?php echo htmlspecialchars($companyName); ?></strong>. Your payment details have been recorded below.
                     </div>
 
                     <!-- MAIN STATUS CARD: PAYMENT RECEIVED (GREEN THEME) -->
@@ -232,12 +232,12 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                         <tr>
                             <td style="padding: 14px 16px;">
                                 <div style="font-size: 11px; font-weight: bold; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-                                    SR Enterprises Comprehensive Services
+                                    <?php echo htmlspecialchars($companyName); ?> Comprehensive Services
                                 </div>
                                 <div style="font-size: 12px; color: #1E3A8A; line-height: 1.5;">
-                                    • RO Repairing Services &amp; Maintenance<br />
-                                    • New RO Purifier Sales &amp; Installation<br />
-                                    • Genuine Spare Parts &amp; Membrane Replacements<br />
+                                    • Equipment Repair Services &amp; Maintenance<br />
+                                    • New Product Sales &amp; Installation<br />
+                                    • Genuine Spare Parts &amp; Component Replacements<br />
                                     • Annual Maintenance Contracts (AMC)
                                 </div>
                             </td>
@@ -246,7 +246,7 @@ SR Enterprises — Reliable Solutions. Pure Performance.
 
                     <!-- CLOSING -->
                     <div style="font-size: 13px; color: #475569; line-height: 1.5;">
-                        Thank you for choosing <strong>SR Enterprises</strong>. We look forward to providing you with pure water and uninterrupted service.
+                        Thank you for choosing <strong><?php echo htmlspecialchars($companyName); ?></strong>. We look forward to providing you with uninterrupted service.
                     </div>
                 </td>
             </tr>
@@ -262,13 +262,13 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                                 </div>
                                 <div>Helpline: <strong style="color: #E2E8F0;"><?php echo htmlspecialchars($supportPhone); ?></strong></div>
                                 <div>Email: <strong style="color: #E2E8F0;"><?php echo htmlspecialchars($supportEmail); ?></strong></div>
-                                <div>Address: <span style="color: #CBD5E1;">SR Enterprises — Water Purifier Sales &amp; Services</span></div>
+                                <div>Address: <span style="color: #CBD5E1;"><?php echo htmlspecialchars($companyName); ?> — Commercial Services</span></div>
                                 <div style="margin-top: 8px; color: #64748B;">
-                                    SR Enterprises • Reliable Solutions. Pure Performance.
+                                    <?php echo htmlspecialchars($companyName); ?> • Reliable Solutions. Professional Service.
                                 </div>
                             </td>
                             <td align="right" valign="bottom" style="text-align: right; color: #64748B; font-size: 10px;">
-                                © <?php echo date('Y'); ?> SR Enterprises.<br />All rights reserved.
+                                © <?php echo date('Y'); ?> <?php echo htmlspecialchars($companyName); ?>.<br />All rights reserved.
                             </td>
                         </tr>
                     </table>

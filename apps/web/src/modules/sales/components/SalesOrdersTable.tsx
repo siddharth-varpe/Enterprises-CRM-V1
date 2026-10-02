@@ -99,7 +99,7 @@ export const DEFAULT_SALES_ORDERS: SalesOrderRow[] = [
     customerName: 'Vijay Shinde',
     customerLocation: 'Pimpri',
     customerAvatar: { type: 'initials', initials: 'VS', bgClass: 'bg-emerald-100', textClass: 'text-emerald-800' },
-    productName: 'RO Machine',
+    productName: 'Product',
     productSubtext: '1 Unit',
     productType: 'ro',
     amount: '₹ 14,800',

@@ -80,8 +80,8 @@ export const SYSTEM_PERMISSIONS: SystemPermissionDef[] = [
   { key: 'notifications.manage', name: 'Manage Notifications', module: 'Notifications', description: 'Dismiss and configure notifications' },
 
   // Rental Management Module
-  { key: 'rentals.view', name: 'View Rentals', module: 'Rentals', description: 'View machine rentals, contracts and subscriptions' },
-  { key: 'rentals.create', name: 'Create Rentals', module: 'Rentals', description: 'Create new rental agreements and machine subscriptions' },
+  { key: 'rentals.view', name: 'View Rentals', module: 'Rentals', description: 'View equipment rentals, contracts and subscriptions' },
+  { key: 'rentals.create', name: 'Create Rentals', module: 'Rentals', description: 'Create new rental agreements and equipment subscriptions' },
   { key: 'rentals.edit', name: 'Edit Rentals', module: 'Rentals', description: 'Update rental agreements, record payments and returns' },
   { key: 'rentals.delete', name: 'Delete Rentals', module: 'Rentals', description: 'Terminate or delete rental agreements' },
 

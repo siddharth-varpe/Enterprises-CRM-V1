@@ -138,7 +138,7 @@ export const EditPurchaseModal: React.FC<EditPurchaseModalProps> = ({
                 type="text"
                 value={supplierName}
                 onChange={(e) => setSupplierName(e.target.value)}
-                placeholder="e.g. Acme Industrial Spares"
+                placeholder="e.g. National Components & Supplies Ltd."
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>

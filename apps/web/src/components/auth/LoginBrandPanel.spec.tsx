@@ -7,9 +7,9 @@ describe('LoginBrandPanel Component Content & Visibility Suite', () => {
   it('renders all brand header identity elements', () => {
     render(<LoginBrandPanel />);
 
-    expect(screen.getByText('SR ENTERPRISES')).toBeDefined();
+    expect(screen.getByText('ENTERPRISES')).toBeDefined();
     expect(screen.getByText('CRM')).toBeDefined();
-    const logoImg = screen.getByAltText('SR Enterprises Logo');
+    const logoImg = screen.getByAltText('Enterprises CRM Logo');
     expect(logoImg).toBeDefined();
   });
 
@@ -20,12 +20,12 @@ describe('LoginBrandPanel Component Content & Visibility Suite', () => {
     const welcomeTag = screen.getByText('Welcome to');
     expect(welcomeTag).toBeDefined();
 
-    // SR Enterprises CRM heading
-    const mainHeading = screen.getByRole('heading', { level: 1, name: /SR Enterprises CRM/i });
+    // Enterprises CRM heading
+    const mainHeading = screen.getByRole('heading', { level: 1, name: /Enterprises CRM/i });
     expect(mainHeading).toBeDefined();
 
     // Descriptive marketing copy
-    const marketingCopy = screen.getByText(/A smart CRM to manage your RO business customers/i);
+    const marketingCopy = screen.getByText(/A smart CRM to manage your business customers/i);
     expect(marketingCopy).toBeDefined();
 
     // Ensure the parent container is not hidden
@@ -51,6 +51,6 @@ describe('LoginBrandPanel Component Content & Visibility Suite', () => {
 
     // Feature 4
     expect(screen.getByRole('heading', { level: 2, name: /Services/i })).toBeDefined();
-    expect(screen.getByText(/Track RO services & history/i)).toBeDefined();
+    expect(screen.getByText(/Track services & history/i)).toBeDefined();
   });
 });

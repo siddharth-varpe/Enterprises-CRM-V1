@@ -8,7 +8,7 @@ export interface LoadingScreenProps {
 }
 
 /**
- * SR Enterprises CRM - Code-Based Application Loading Screen Component
+ * Enterprises CRM - Code-Based Application Loading Screen Component
  *
  * Reproduces the approved visual design using:
  * - Clean transparent CRM logo PNG
@@ -31,7 +31,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
       id="crm-splash-screen"
       role="status"
       aria-live="polite"
-      aria-label="Loading SR Enterprises CRM"
+      aria-label="Loading Enterprises CRM"
       className={`fixed inset-0 w-screen h-screen z-[9999999] flex flex-col items-center justify-center overflow-hidden m-0 p-6 box-border select-none transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
         isFadingOut ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'
       }`}
@@ -46,7 +46,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           <img
             id="crm-splash-logo"
             src="/crm-logo.png"
-            alt="SR Enterprises CRM"
+            alt="Enterprises CRM"
             className="w-[175px] md:w-[215px] max-w-[65vw] max-h-[230px] md:max-h-[285px] object-contain block"
             width="220"
             height="292"

@@ -1,0 +1,34 @@
+{
+  "id": "/technician",
+  "name": "Enterprises Technician",
+  "short_name": "Technician",
+  "description": "Enterprises Technician Portal - Mobile field service & work order management",
+  "start_url": "/technician/",
+  "scope": "/technician/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B132B",
+  "theme_color": "#0B132B",
+  "lang": "en",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/pwa-technician-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-technician-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-technician-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

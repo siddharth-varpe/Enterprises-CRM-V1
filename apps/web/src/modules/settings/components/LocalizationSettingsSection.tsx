@@ -11,7 +11,7 @@ export const LocalizationSettingsSection: React.FC = () => {
   const resetMutation = useResetSettingsMutation();
 
   const [form, setForm] = useState<SystemSettings>({
-    appName: 'SR Enterprises CRM / SRM',
+    appName: 'Enterprises CRM',
     appVersion: '1.0.0',
     timezone: 'Asia/Kolkata',
     currency: 'INR',

@@ -72,3 +72,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   { key: 'tasks', label: 'Tasks', path: '/tasks', icon: 'ClipboardCheck' },
   { key: 'settings', label: 'Settings', path: '/settings', icon: 'Settings' },
 ];
+
+export * from './technician-portal';
+

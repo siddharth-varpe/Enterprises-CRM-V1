@@ -4,13 +4,15 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && pnpm --filter @crm/web build
+    buildCommand: npm install -g pnpm@9.15.4 && pnpm install --frozen-lockfile && pnpm --filter @crm/web build
     startCommand: pnpm --filter @crm/api start
     healthCheckPath: /health
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 20.18.3
       - key: HOST
         value: 0.0.0.0
       - key: PORT
@@ -18,7 +20,7 @@ services:
       - key: NODE_OPTIONS
         value: --max-old-space-size=384 --expose-gc
       - key: COOKIE_SAME_SITE
-        value: none
+        value: lax
       - key: USE_POSTGRES
         value: "true"
       - key: DB_MAX_CONNECTIONS
@@ -35,5 +37,34 @@ services:
         sync: false
       - key: SESSION_SECRET
         sync: false
+      - key: COOKIE_SECRET
+        sync: false
       - key: ARCHIVE_DATABASE_URL
         sync: false
+      - key: MAPS_JAVASCRIPT_API_KEY
+        sync: false
+      - key: ROUTES_API_KEY
+        sync: false
+      - key: MAP_ID
+        sync: false
+      - key: GOOGLE_MAPS_BROWSER_API_KEY
+        sync: false
+      - key: GOOGLE_MAPS_SERVER_API_KEY
+        sync: false
+      - key: GOOGLE_MAPS_MAP_ID
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: SMTP_FROM_NAME
+        sync: false
+

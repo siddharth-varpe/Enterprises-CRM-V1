@@ -682,6 +682,7 @@ export type ReminderQueryFilter = z.infer<typeof ReminderQueryFilterSchema>;
 export const CreateServiceSchema = z.object({
   customerId: z.string().uuid('Invalid customer ID'),
   assetId: z.string().optional().nullable(),
+  machineName: z.string().optional().nullable(),
   warrantyId: z.string().uuid('Invalid warranty ID').optional().nullable(),
   serviceType: z.enum(['INSTALLATION', 'REPAIR', 'PERIODIC_MAINTENANCE', 'EMERGENCY', 'SPARE_REPLACEMENT']),
   serviceLocation: z.enum(['DOORSTEP', 'IN_SHOP']).default('DOORSTEP'),
@@ -698,6 +699,7 @@ export type CreateServiceInput = z.infer<typeof CreateServiceSchema>;
 export const UpdateServiceSchema = z.object({
   customerId: z.string().uuid('Invalid customer ID').optional(),
   assetId: z.string().optional().nullable().or(z.literal('')),
+  machineName: z.string().optional().nullable(),
   warrantyId: z.string().uuid('Invalid warranty ID').optional().nullable().or(z.literal('')),
   serviceType: z.enum(['INSTALLATION', 'REPAIR', 'PERIODIC_MAINTENANCE', 'EMERGENCY', 'SPARE_REPLACEMENT']).optional(),
   serviceLocation: z.enum(['DOORSTEP', 'IN_SHOP']).optional(),
@@ -708,7 +710,7 @@ export const UpdateServiceSchema = z.object({
   customerNotes: z.string().optional().nullable(),
   internalNotes: z.string().optional().nullable(),
   technicianId: z.string().uuid('Invalid technician ID').optional().nullable().or(z.literal('')),
-  status: z.enum(['SCHEDULED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'OVERDUE']).optional(),
+  status: z.enum(['SCHEDULED', 'ASSIGNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED', 'OVERDUE']).optional(),
   cancelReason: z.string().optional().nullable(),
   // Job card execution fields
   diagnosis: z.string().optional().nullable(),
@@ -752,7 +754,7 @@ export const ServiceQueryFilterSchema = PaginationQuerySchema.extend({
   assetId: z.string().uuid().optional(),
   technicianId: z.string().uuid().optional(),
   serviceType: z.enum(['INSTALLATION', 'REPAIR', 'PERIODIC_MAINTENANCE', 'EMERGENCY', 'SPARE_REPLACEMENT']).optional(),
-  status: z.enum(['SCHEDULED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'OVERDUE', 'ALL']).optional(),
+  status: z.enum(['SCHEDULED', 'ASSIGNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED', 'OVERDUE', 'ALL']).optional(),
   classification: z.string().optional(),
   location: z.string().optional(),
   priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT', 'ALL']).optional(),
@@ -876,9 +878,11 @@ export const JobCardQueryFilterSchema = PaginationQuerySchema.extend({
     'STARTED',
     'DIAGNOSIS',
     'IN_PROGRESS',
+    'ON_HOLD',
     'COMPLETED',
     'CUSTOMER_CONFIRMED',
     'CLOSED',
+    'CANCELLED',
     'ALL',
   ]).optional(),
 });
@@ -900,11 +904,17 @@ export const CreateTechnicianSchema = z.object({
   skills: z.array(z.string()).optional(),
   emergencyContact: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  portalEnabled: z.boolean().optional(),
 });
 export type CreateTechnicianInput = z.infer<typeof CreateTechnicianSchema>;
 
 export const UpdateTechnicianSchema = CreateTechnicianSchema.partial();
 export type UpdateTechnicianInput = z.infer<typeof UpdateTechnicianSchema>;
+
+export const TogglePortalAccessSchema = z.object({
+  portalEnabled: z.boolean(),
+});
+export type TogglePortalAccessInput = z.infer<typeof TogglePortalAccessSchema>;
 
 export const TechnicianQueryFilterSchema = PaginationQuerySchema.extend({
   status: z.enum(['ACTIVE', 'ON_LEAVE', 'INACTIVE', 'SUSPENDED', 'ALL']).optional(),
@@ -1432,4 +1442,7 @@ export const ChatbotMessageQuerySchema = z.object({
   conversationId: z.string().uuid('Invalid conversation UUID').optional(),
 });
 export type ChatbotMessageQueryInput = z.infer<typeof ChatbotMessageQuerySchema>;
+
+export * from './technician-portal';
+
 

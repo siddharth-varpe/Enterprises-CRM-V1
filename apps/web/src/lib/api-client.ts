@@ -154,7 +154,9 @@ export async function apiRequest<T>(
       response.status === 401 &&
       !url.includes('/auth/login') &&
       !url.includes('/auth/captcha') &&
-      !url.includes('/public/')
+      !url.includes('/public/') &&
+      !url.includes('/technician-auth') &&
+      !url.includes('/technician/')
     ) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('auth:unauthorized', {

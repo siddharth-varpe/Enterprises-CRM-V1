@@ -2,7 +2,7 @@
   "name": "sr-enterprises-crm",
   "version": "0.1.0",
   "private": true,
-  "description": "SR Enterprises CRM - Commercial-grade SaaS for RO sales, service, warranty & job card management",
+  "description": "Enterprises CRM - Commercial-grade SaaS for sales, service, warranty & job card management",
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "pnpm --parallel --filter @crm/api --filter @crm/web dev",

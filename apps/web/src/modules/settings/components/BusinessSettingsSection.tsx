@@ -124,7 +124,7 @@ export const BusinessSettingsSection: React.FC = () => {
               value={form.businessName}
               onChange={(e) => handleChange('businessName', e.target.value)}
               className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-medium text-slate-900"
-              placeholder="e.g. SR Enterprises"
+              placeholder="e.g. Enterprises CRM"
             />
             <p className="text-[11px] text-slate-500 mt-1">Appears on invoices, SMS, and WhatsApp dispatches.</p>
           </div>
@@ -139,7 +139,7 @@ export const BusinessSettingsSection: React.FC = () => {
               value={form.legalName}
               onChange={(e) => handleChange('legalName', e.target.value)}
               className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-medium text-slate-900"
-              placeholder="e.g. SR Enterprises Water Purification Services"
+              placeholder="e.g. Enterprises Private Limited"
             />
           </div>
 
@@ -228,7 +228,7 @@ export const BusinessSettingsSection: React.FC = () => {
               value={form.email}
               onChange={(e) => handleChange('email', e.target.value)}
               className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono text-slate-900"
-              placeholder="srenterprises02015@gmail.com"
+              placeholder="business@example.com"
             />
           </div>
 

@@ -7,10 +7,15 @@ import {
   Calendar,
   AlertCircle,
   Edit2,
+  ShieldCheck,
+  CheckCircle2,
+  Ban,
+  User,
 } from 'lucide-react';
 import {
   useTechnicianDetailQuery,
   useUpdateTechnicianMutation,
+  useTogglePortalAccessMutation,
   type TechnicianItem,
 } from '../technicians.api';
 
@@ -20,6 +25,7 @@ export interface TechnicianDetailDrawerProps {
   technician: TechnicianItem | null;
   onEdit: (tech: TechnicianItem) => void;
   onViewJobCard: (id: string) => void;
+  onViewProfile?: (tech: TechnicianItem) => void;
 }
 
 export const TechnicianDetailDrawer: React.FC<TechnicianDetailDrawerProps> = ({
@@ -28,13 +34,16 @@ export const TechnicianDetailDrawer: React.FC<TechnicianDetailDrawerProps> = ({
   technician,
   onEdit,
   onViewJobCard,
+  onViewProfile,
 }) => {
   const { data: detail } = useTechnicianDetailQuery(technician?.id);
   const updateMutation = useUpdateTechnicianMutation();
+  const togglePortalMutation = useTogglePortalAccessMutation();
 
   if (!isOpen || !technician) return null;
 
   const current = detail || technician;
+  const isPortalActive = Boolean(current.portalEnabled);
 
   const handleStatusChange = async (newStatus: 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE') => {
     try {
@@ -44,6 +53,17 @@ export const TechnicianDetailDrawer: React.FC<TechnicianDetailDrawerProps> = ({
       });
     } catch (err) {
       console.error('Failed to change status:', err);
+    }
+  };
+
+  const handlePortalAccessToggle = async (enable: boolean) => {
+    try {
+      await togglePortalMutation.mutateAsync({
+        id: current.id,
+        portalEnabled: enable,
+      });
+    } catch (err) {
+      console.error('Failed to update portal access:', err);
     }
   };
 
@@ -92,6 +112,23 @@ export const TechnicianDetailDrawer: React.FC<TechnicianDetailDrawerProps> = ({
 
           {/* Drawer Body */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm">
+            {/* View Full 360 Profile Button */}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (onViewProfile) {
+                  onViewProfile(current);
+                } else if (typeof window !== 'undefined') {
+                  window.location.href = `/technicians/${current.id}`;
+                }
+              }}
+              className="w-full py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer"
+            >
+              <User className="w-4 h-4" />
+              Open Complete 360° Profile Page
+            </button>
+
             {/* Status Quick Toggle */}
             <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wide block">
@@ -133,6 +170,61 @@ export const TechnicianDetailDrawer: React.FC<TechnicianDetailDrawerProps> = ({
                   }`}
                 >
                   Inactive
+                </button>
+              </div>
+            </div>
+
+            {/* Technician Portal Access Control */}
+            <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wide block flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
+                    Technician Portal Access
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Mobile login and field assignment access.
+                  </p>
+                </div>
+                <span
+                  data-testid="portal-access-status-badge"
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                    isPortalActive
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-slate-100 text-slate-600 border-slate-200'
+                  }`}
+                >
+                  {isPortalActive ? 'ENABLED' : 'DISABLED'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  data-testid="enable-portal-access-button"
+                  onClick={() => handlePortalAccessToggle(true)}
+                  disabled={togglePortalMutation.isPending || isPortalActive}
+                  className={`py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    isPortalActive
+                      ? 'bg-emerald-600 text-white shadow-2xs opacity-90 cursor-default'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Enable Access
+                </button>
+                <button
+                  type="button"
+                  data-testid="disable-portal-access-button"
+                  onClick={() => handlePortalAccessToggle(false)}
+                  disabled={togglePortalMutation.isPending || !isPortalActive}
+                  className={`py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    !isPortalActive
+                      ? 'bg-slate-700 text-white shadow-2xs opacity-90 cursor-default'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200'
+                  }`}
+                >
+                  <Ban className="w-3.5 h-3.5" />
+                  Disable Access
                 </button>
               </div>
             </div>

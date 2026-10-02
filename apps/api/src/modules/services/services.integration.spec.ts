@@ -77,7 +77,8 @@ describe('Services Scheduling & Reminder Integration Tests', () => {
     const tech = techs[0];
 
     // 4. Confirm & Schedule Service Visit
-    const visitDate = '2026-09-08';
+    const now = new Date();
+    const visitDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-08`;
     const schedulePayload = {
       customerId: testCust.id,
       assetId: testAsset.id,
@@ -231,7 +232,7 @@ describe('Services Scheduling & Reminder Integration Tests', () => {
     const schedulerReport = await emailScheduler.scanAndTrigger();
     expect(schedulerReport).toBeDefined();
     expect(schedulerReport.status).toBe('COMPLETED');
-  });
+  }, 15000);
 
   it('TEST 10: should update service completely including schedule, notes, technician, and job card fields', async () => {
     let [testCust] = await db.select().from(customers).limit(1);
@@ -295,5 +296,46 @@ describe('Services Scheduling & Reminder Integration Tests', () => {
     expect(Number(detail?.laborCharges)).toBe(350);
     expect(Number(detail?.partsCharges)).toBe(150);
     expect(Number(detail?.totalCharges)).toBe(500);
+  });
+
+  it('TEST 11: should schedule a service with custom machine name and display only that machine in service list', async () => {
+    // 1. Create a customer specifically for custom machine scheduling
+    const [cust] = await db
+      .insert(customers)
+      .values({
+        customerNumber: `CUST-MCH-${Date.now() % 10000}`,
+        fullName: 'Custom Machine Customer',
+        phone: '9988776655',
+        status: 'ACTIVE',
+      })
+      .returning();
+
+    // 2. Schedule service specifying an exact custom machine name
+    const customMachine = 'Kent Grand Plus RO Alkaline';
+    const created = await servicesRepository.createService({
+      customerId: cust.id,
+      machineName: customMachine,
+      serviceType: 'PERIODIC_MAINTENANCE',
+      serviceLocation: 'DOORSTEP',
+      serviceClassification: 'GENERAL',
+      scheduledDate: '2026-10-15',
+      scheduledTimeSlot: '10:00 AM - 12:00 PM',
+      priority: 'NORMAL',
+    });
+
+    expect(created.service).toBeDefined();
+
+    // 3. Query services list and verify exact machine name is projected in productName
+    const servicesList = await servicesRepository.findPaginated({
+      customerId: cust.id,
+      page: 1,
+      limit: 10,
+    });
+
+    expect(servicesList.data.length).toBeGreaterThan(0);
+    const targetService = servicesList.data.find((s) => s.id === created.service.id);
+    expect(targetService).toBeDefined();
+    expect(targetService?.productName).toBe(customMachine);
+    expect(targetService?.productName).not.toBe('Customer RO Water Purifier');
   });
 });

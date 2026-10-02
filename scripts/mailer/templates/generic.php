@@ -7,18 +7,28 @@
 
 $customerDisplayName = !empty($toName) ? $toName : (!empty($customerName) ? $customerName : 'Valued Customer');
 $subject = !empty($subject) ? $subject : "Notification from {$companyName}";
-$contentBody = !empty($messageBody) ? $messageBody : (!empty($notes) ? $notes : 'Please find your official communication from SR Enterprises enclosed below.');
+$otpCode = $otp ?? $payload['otp'] ?? $otpCode ?? null;
+$contentBody = !empty($messageBody)
+    ? $messageBody
+    : (!empty($message)
+        ? $message
+        : (!empty($content)
+            ? $content
+            : (!empty($body)
+                ? $body
+                : (!empty($notes)
+                    ? $notes
+                    : (!empty($payload['message'])
+                        ? $payload['message']
+                        : 'Please find your official communication from ' . htmlspecialchars($companyName) . ' enclosed below.')))));
 
 // Plain Text fallback
-$plainText = "Hello {$customerDisplayName},
+$plainText = "Hello {$customerDisplayName},\n\n";
+if (!empty($otpCode)) {
+    $plainText .= "Your verification code is: {$otpCode}\n\n";
+}
+$plainText .= "{$contentBody}\n\nNeed Assistance?\nHelpline: {$supportPhone}\nEmail: {$supportEmail}\n{$companyName} — Reliable Solutions. Professional Service.\n";
 
-{$contentBody}
-
-Need Assistance?
-Helpline: {$supportPhone}
-Email: {$supportEmail}
-SR Enterprises — Reliable Solutions. Pure Performance.
-";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
@@ -50,14 +60,14 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                                 <table border="0" cellpadding="0" cellspacing="0">
                                     <tr>
                                         <td style="width: 40px; height: 40px; background-color: #0B63F6; border-radius: 8px; text-align: center; vertical-align: middle; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: bold; color: #FFFFFF;">
-                                            SR
+                                            CRM
                                         </td>
                                         <td style="padding-left: 12px; vertical-align: middle;">
                                             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 17px; font-weight: bold; color: #FFFFFF; letter-spacing: 0.5px; line-height: 1.2;">
-                                                SR ENTERPRISES
+                                                <?php echo htmlspecialchars($companyName); ?>
                                             </div>
                                             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #93C5FD; margin-top: 2px;">
-                                                Reliable Solutions. Pure Performance.
+                                                Reliable Solutions. Professional Service.
                                             </div>
                                         </td>
                                     </tr>
@@ -83,6 +93,17 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                     <div style="font-size: 13px; color: #334155; line-height: 1.6; margin-bottom: 20px;">
                         <?php echo nl2br(htmlspecialchars($contentBody)); ?>
                     </div>
+
+                    <?php if (!empty($otpCode)): ?>
+                    <div style="background-color: #0F172A; border: 2px solid #38BDF8; border-radius: 10px; padding: 20px; text-align: center; margin: 20px 0;">
+                        <div style="font-family: monospace, Courier, monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #38BDF8; line-height: 1;">
+                            <?php echo htmlspecialchars($otpCode); ?>
+                        </div>
+                        <div style="font-size: 11px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; font-weight: 600;">
+                            Single-Use Verification Code
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- SUPPORT INFO -->
                     <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #EAF3FF; border: 1px solid #BFDBFE; border-radius: 8px; margin-bottom: 20px;">
@@ -111,13 +132,13 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                                 </div>
                                 <div>Helpline: <strong style="color: #E2E8F0;"><?php echo htmlspecialchars($supportPhone); ?></strong></div>
                                 <div>Email: <strong style="color: #E2E8F0;"><?php echo htmlspecialchars($supportEmail); ?></strong></div>
-                                <div>Address: <span style="color: #CBD5E1;">SR Enterprises — Water Purifier Sales &amp; Services</span></div>
+                                <div>Address: <span style="color: #CBD5E1;"><?php echo htmlspecialchars($companyName); ?> — Commercial Services</span></div>
                                 <div style="margin-top: 8px; color: #64748B;">
-                                    SR Enterprises • Reliable Solutions. Pure Performance.
+                                    <?php echo htmlspecialchars($companyName); ?> • Reliable Solutions. Professional Service.
                                 </div>
                             </td>
                             <td align="right" valign="bottom" style="text-align: right; color: #64748B; font-size: 10px;">
-                                © <?php echo date('Y'); ?> SR Enterprises.<br />All rights reserved.
+                                © <?php echo date('Y'); ?> <?php echo htmlspecialchars($companyName); ?>.<br />All rights reserved.
                             </td>
                         </tr>
                     </table>

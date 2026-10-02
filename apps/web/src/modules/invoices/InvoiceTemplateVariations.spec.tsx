@@ -83,7 +83,7 @@ describe('Invoice Template Variations Verification (Section 11 Tests A-G)', () =
     expect(screen.getByText('₹ 0')).toBeDefined();
 
     // Verify static lower section image with Bank Details and Payment QR
-    const lowerImg = screen.getByAltText('Official SR Enterprises Bank, QR, Terms & Signatory') as HTMLImageElement;
+    const lowerImg = screen.getByAltText('Official Enterprises CRM Bank, QR, Terms & Signatory') as HTMLImageElement;
     expect(lowerImg).toBeDefined();
     expect(lowerImg.src).toBe(OFFICIAL_LOWER_SECTION_B64);
   });
@@ -245,8 +245,8 @@ describe('Invoice Template Variations Verification (Section 11 Tests A-G)', () =
     expect(tableRows.length).toBe(11);
   });
 
-  // TEST G: Mandatory Verification — Addition of AU Bank Details & AU Bank QR, Terms, Signatory
-  it('TEST G: Verifies AU Small Finance Bank Details, AU Bank Payment QR, Terms & Conditions, and Signatory', () => {
+  // TEST G: Mandatory Verification — Addition of Enterprises CRM Bank Details & Payment QR, Terms, Signatory
+  it('TEST G: Verifies State Bank of India Details, Payment QR, Terms & Conditions, and Signatory', () => {
     const { container } = renderWithInvoiceData({
       id: 'inv-g',
       invoiceNumber: '0926256',
@@ -272,14 +272,14 @@ describe('Invoice Template Variations Verification (Section 11 Tests A-G)', () =
 
     // TEST 1: Bank Details heading and account details are present in metadata/alt
     expect(screen.getByText(/Bank Details/i)).toBeDefined();
-    expect(screen.getByText(/AU Small Finance Bank/i)).toBeDefined();
-    expect(screen.getByText(/2602245912923632/i)).toBeDefined();
-    expect(screen.getByText(/AUBL0002459/i)).toBeDefined();
-    expect(screen.getByText(/S R Enterprises/i)).toBeDefined();
+    expect(screen.getByText(/State Bank of India/i)).toBeDefined();
+    expect(screen.getByText(/30998877665/i)).toBeDefined();
+    expect(screen.getByText(/SBIN0001234/i)).toBeDefined();
+    expect(screen.getByText(/Name: Enterprises CRM/i)).toBeDefined();
 
-    // TEST 2: Payment QR is visible with AU Bank UPI ID
+    // TEST 2: Payment QR is visible with UPI ID
     expect(screen.getByText(/Payment QR Code/i)).toBeDefined();
-    expect(screen.getByText(/srenterprises6711@aubank/i)).toBeDefined();
+    expect(screen.getByText(/enterprises.crm@upi/i)).toBeDefined();
 
     // TEST 3: Terms and Conditions are still visible
     expect(screen.getByText(/Terms and Conditions/i)).toBeDefined();

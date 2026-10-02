@@ -1630,3 +1630,6 @@ export interface ChatbotMessageItem {
   createdAt: string | Date;
 }
 
+export * from './technician-portal';
+
+

@@ -11,6 +11,13 @@ interface InventoryItemModalProps {
 }
 
 const CATEGORIES = [
+  'General',
+  'Equipment',
+  'Electronics & Electrical',
+  'Mechanical & Hardware',
+  'Spare Parts & Components',
+  'Consumables & Supplies',
+  'Accessories & Tools',
   'Filter',
   'Membrane',
   'Pump',
@@ -32,7 +39,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
   const isEdit = !!item;
 
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('Filter');
+  const [category, setCategory] = useState('General');
   const [brand, setBrand] = useState('');
   const [partNumber, setPartNumber] = useState('');
   const [description, setDescription] = useState('');
@@ -46,7 +53,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
   useEffect(() => {
     if (item) {
       setName(item.name || '');
-      setCategory(item.category || 'Filter');
+      setCategory(item.category || 'General');
       setBrand(item.brand || '');
       setPartNumber(item.partNumber || '');
       setDescription(item.description || '');
@@ -57,7 +64,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
       setStatus(item.status || 'ACTIVE');
     } else {
       setName('');
-      setCategory('Filter');
+      setCategory('General');
       setBrand('');
       setPartNumber('');
       setDescription('');
@@ -139,12 +146,12 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <div>
             <h2 className="text-lg font-bold text-gray-900">
-              {isEdit ? 'Edit Inventory Item' : 'Add New Inventory Item / Spare Part'}
+              {isEdit ? 'Edit Inventory Item' : 'Add New Inventory Item'}
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
               {isEdit
                 ? 'Update master specifications & price levels'
-                : 'Register a new spare part, accessory, or consumable in inventory'}
+                : 'Register a new item, component, or consumable in inventory'}
             </p>
           </div>
           <button
@@ -169,14 +176,14 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="md:col-span-2">
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Item / Spare Part Name <span className="text-red-500">*</span>
+                Item Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Sediment Filter 10 Inch Spun"
+                placeholder="e.g. Standard Component / Unit Model-X"
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
               />
             </div>
@@ -202,7 +209,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                 type="text"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
-                placeholder="e.g. Kemflo, Dow, AquaFresh"
+                placeholder="e.g. Manufacturer / Brand Name"
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
               />
             </div>
@@ -215,7 +222,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                 type="text"
                 value={partNumber}
                 onChange={(e) => setPartNumber(e.target.value)}
-                placeholder="e.g. SF-10-SPUN"
+                placeholder="e.g. SKU-10024-X"
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
               />
             </div>
@@ -320,7 +327,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Technical specs, compatible models, storage rack number..."
+              placeholder="e.g. Technical specifications, model compatibility, storage location..."
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
             />
           </div>

@@ -43,8 +43,7 @@ class MailerEngine {
                 if (count($parts) === 2) {
                     $k = trim($parts[0]);
                     $v = trim(trim($parts[1]), '"\'');
-                    $existing = getenv($k);
-                    if (($existing === false || $existing === '') && $v !== '') {
+                    if ($v !== '') {
                         putenv("$k=$v");
                         $_ENV[$k] = $v;
                         $_SERVER[$k] = $v;
@@ -74,7 +73,7 @@ class MailerEngine {
         $smtpSecure = strtolower(getenv('SMTP_SECURE') ?: getenv('MAIL_ENCRYPTION') ?: $_ENV['SMTP_SECURE'] ?? $_ENV['MAIL_ENCRYPTION'] ?? $_SERVER['SMTP_SECURE'] ?? $_SERVER['MAIL_ENCRYPTION'] ?? 'tls');
         
         $fromEmail = getenv('SMTP_FROM_EMAIL') ?: getenv('SMTP_FROM') ?: getenv('MAIL_FROM_ADDRESS') ?: ($smtpUser ?: 'srenterprises02015@gmail.com');
-        $fromName = getenv('SMTP_FROM_NAME') ?: getenv('MAIL_FROM_NAME') ?: 'SR Enterprises';
+        $fromName = getenv('SMTP_FROM_NAME') ?: getenv('MAIL_FROM_NAME') ?: 'Enterprises CRM';
         $supportEmail = getenv('SUPPORT_EMAIL') ?: ($smtpUser ?: 'srenterprises02015@gmail.com');
 
         // Optional server-side secure SMTP debug logging
@@ -157,12 +156,29 @@ class MailerEngine {
             $toEmail = $devOverride;
         }
 
-        // Render Templates
-        $rendered = self::renderTemplate($eventType, $payload);
-        $htmlBody = $rendered['html'];
-        $plainText = $rendered['text'];
+        // Support pre-rendered HTML/text if provided by caller (e.g. OTP verification templates)
+        $htmlBody = $payload['html'] ?? $payload['payload']['html'] ?? null;
+        $plainText = $payload['text'] ?? $payload['payload']['text'] ?? null;
         if (empty($subject)) {
-            $subject = $rendered['subject'];
+            $subject = $payload['subject'] ?? $payload['payload']['subject'] ?? '';
+        }
+
+        if (empty($htmlBody)) {
+            $rendered = self::renderTemplate($eventType, $payload);
+            $htmlBody = $rendered['html'];
+            if (empty($plainText)) {
+                $plainText = $rendered['text'];
+            }
+            if (empty($subject)) {
+                $subject = $rendered['subject'];
+            }
+        } elseif (empty($plainText)) {
+            $plainText = strip_tags(str_replace(['<br>', '<br/>', '</p>', '</tr>', '</div>'], "\n", $htmlBody));
+            $plainText = trim(preg_replace("/[\r\n]+/", "\n", $plainText));
+        }
+
+        if (empty($subject)) {
+            $subject = 'Notification from ' . (getenv('COMPANY_NAME') ?: 'Enterprises CRM');
         }
 
         $mail = self::createMailer();
@@ -299,10 +315,10 @@ class MailerEngine {
         }
 
         // Shared metadata variables
-        $companyName = getenv('COMPANY_NAME') ?: 'SR Enterprises';
+        $companyName = getenv('COMPANY_NAME') ?: 'Enterprises CRM';
         $supportPhone = getenv('SUPPORT_PHONE') ?: '+91 98200 11223';
         $supportEmail = getenv('SUPPORT_EMAIL') ?: 'support@srenterprises.com';
-        $upiId = getenv('UPI_ID') ?: 'srenterprises6711@aubank';
+        $upiId = getenv('UPI_ID') ?: 'enterprises.crm@upi';
 
         // Extract variables for template rendering
         extract($data);

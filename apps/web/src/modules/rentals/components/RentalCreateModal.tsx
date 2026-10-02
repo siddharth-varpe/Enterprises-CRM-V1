@@ -32,7 +32,7 @@ function generateMachineSerialNumber(): string {
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const year2 = String(now.getFullYear()).slice(-2);
   const rand = Math.floor(1000 + Math.random() * 9000);
-  return `SN-RO-${day}${month}${year2}-${rand}`;
+  return `SN-EQ-${day}${month}${year2}-${rand}`;
 }
 
 export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
@@ -71,14 +71,14 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
 
   // Form State
   const [formData, setFormData] = useState({
-    // Machine Details
-    machineType: 'RO',
-    machineModel: 'SR Aqua Pure Pro RO',
-    serialNumber: generateMachineSerialNumber(),
-    capacityLph: '15 LPH',
-    installationLocation: 'Kitchen Counter',
+    // Product & Equipment Details
+    machineType: 'STANDARD',
+    machineModel: '',
+    serialNumber: '',
+    capacityLph: '',
+    installationLocation: '',
     machineCondition: 'GOOD' as const,
-    accessories: 'Pre-filter housing, 5-micron spun filter, diverter valve, inlet tubing',
+    accessories: '',
     remarks: '',
 
     // Agreement Details
@@ -89,23 +89,23 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
     billingFrequency: 'MONTHLY' as const,
 
     // Pricing
-    monthlyRent: 500,
-    securityDeposit: 1500,
+    monthlyRent: '' as any,
+    securityDeposit: '' as any,
     depositStatus: 'COLLECTED' as const,
 
     // Initial Payment
-    initialDepositPaid: true,
-    initialRentPaid: true,
+    initialDepositPaid: false,
+    initialRentPaid: false,
     paymentMethod: 'UPI',
     referenceNumber: '',
 
     // Installation
     installationDate: new Date().toISOString().split('T')[0],
-    installationTime: '11:00 AM',
+    installationTime: '',
     installationAddress: '',
     technicianId: '',
-    installationStatus: 'INSTALLED' as const,
-    installationNotes: 'Machine tested and pure TDS level verified at 45 ppm.',
+    installationStatus: 'PENDING' as const,
+    installationNotes: '',
     notes: '',
   });
 
@@ -142,13 +142,6 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
 
   const handleSelectCustomer = (cust: any) => {
     setSelectedCustomerId(cust.id);
-    const addr = cust.addresses?.[0];
-    if (addr && !formData.installationAddress) {
-      setFormData((prev) => ({
-        ...prev,
-        installationAddress: `${addr.addressLine1 || ''}${addr.city ? `, ${addr.city}` : ''}`,
-      }));
-    }
   };
 
   const calculateInitialTotal = () => {
@@ -165,9 +158,12 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
     if (!selectedCustomerId) {
       errors.customer = 'Please select a customer from the customer database';
     }
-    const serialNumber = formData.serialNumber.trim() || generateMachineSerialNumber();
+    const serialNumber = formData.serialNumber.trim();
+    if (!serialNumber) {
+      errors.serialNumber = 'Equipment serial number is required (or click Auto Generate)';
+    }
     if (!formData.machineModel.trim()) {
-      errors.machineModel = 'Machine model is required';
+      errors.machineModel = 'Product / Equipment model name is required';
     }
     if (!formData.monthlyRent || formData.monthlyRent <= 0) {
       errors.monthlyRent = 'Monthly rent must be greater than 0';
@@ -233,7 +229,7 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
       onClose={onClose}
       size="xl"
       title="Create New Rental Agreement"
-      description="Record a new RO water-purifier machine subscription on recurring rental basis."
+      description="Record a new recurring product or equipment rental agreement."
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* SECTION 1: CUSTOMER SELECTION */}
@@ -334,39 +330,39 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
           )}
         </div>
 
-        {/* SECTION 2: RENTED MACHINE / EQUIPMENT DETAILS */}
+        {/* SECTION 2: RENTED PRODUCT & EQUIPMENT DETAILS */}
         <div className="bg-white rounded-xl p-4.5 border border-slate-200/90 space-y-3.5">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
             <Package className="w-4 h-4 text-purple-600" />
-            <span>2. Rented Machine Details</span>
+            <span>2. Rented Product &amp; Equipment Details</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Machine Type / Category <span className="text-rose-500">*</span>
+                Equipment Category / Type <span className="text-rose-500">*</span>
               </label>
               <select
                 value={formData.machineType}
                 onChange={(e) => setFormData({ ...formData, machineType: e.target.value })}
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
               >
-                <option value="RO">RO Standard</option>
-                <option value="RO + UV">RO + UV</option>
-                <option value="RO + UV + UF">RO + UV + UF Alkaline</option>
-                <option value="Commercial RO">Commercial RO (50+ LPH)</option>
-                <option value="Hot & Cold RO">Hot &amp; Cold RO Dispenser</option>
-                <option value="Other">Other Machine</option>
+                <option value="STANDARD">Standard Equipment</option>
+                <option value="PREMIUM">Premium Unit</option>
+                <option value="COMMERCIAL">Commercial Unit</option>
+                <option value="HEAVY_DUTY">Heavy Duty Unit</option>
+                <option value="PORTABLE">Portable / Compact Unit</option>
+                <option value="CUSTOM">Custom Product / Equipment</option>
               </select>
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Machine Model Name <span className="text-rose-500">*</span>
+                Product / Model Name <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
-                placeholder="e.g. Kent Grand Plus RO"
+                placeholder="e.g. Model Name / Equipment Name (e.g. Unit-X100)"
                 value={formData.machineModel}
                 onChange={(e) => setFormData({ ...formData, machineModel: e.target.value })}
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
@@ -379,7 +375,7 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-[11px] font-bold text-slate-700">
-                  Machine Serial Number <span className="text-rose-500">*</span>
+                  Equipment Serial Number <span className="text-rose-500">*</span>
                 </label>
                 <button
                   type="button"
@@ -392,7 +388,7 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
               </div>
               <input
                 type="text"
-                placeholder="e.g. SN-RO-310826-1024"
+                placeholder="e.g. SN-2026-001234"
                 value={formData.serialNumber}
                 onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
@@ -405,10 +401,10 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">Purification Capacity</label>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">Specifications / Capacity</label>
               <input
                 type="text"
-                placeholder="e.g. 15 LPH"
+                placeholder="e.g. Capacity, rating, dimensions, or technical specifications"
                 value={formData.capacityLph}
                 onChange={(e) => setFormData({ ...formData, capacityLph: e.target.value })}
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl outline-none"
@@ -416,10 +412,10 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">Installation Location</label>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">Deployment / Installation Location</label>
               <input
                 type="text"
-                placeholder="e.g. Kitchen Counter / Wall Mount"
+                placeholder="e.g. Room, floor, building, or installation point"
                 value={formData.installationLocation}
                 onChange={(e) => setFormData({ ...formData, installationLocation: e.target.value })}
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl outline-none"
@@ -427,7 +423,7 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">Machine Condition</label>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">Equipment Condition</label>
               <select
                 value={formData.machineCondition}
                 onChange={(e) => setFormData({ ...formData, machineCondition: e.target.value as any })}
@@ -443,10 +439,10 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">Accessories Provided</label>
+            <label className="block text-[11px] font-bold text-slate-700 mb-1">Accessories / Included Components</label>
             <input
               type="text"
-              placeholder="Pre-filter bowl, spun candle, diverter valve, Teflon tape, 5m food-grade pipe"
+              placeholder="e.g. Included cables, power adapter, attachments, user manual"
               value={formData.accessories}
               onChange={(e) => setFormData({ ...formData, accessories: e.target.value })}
               className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl outline-none"
@@ -495,8 +491,9 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
               <input
                 type="number"
                 min="0"
+                placeholder="0"
                 value={formData.monthlyRent}
-                onChange={(e) => setFormData({ ...formData, monthlyRent: Number(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, monthlyRent: e.target.value === '' ? '' : Number(e.target.value) })}
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none font-mono"
               />
               {formErrors.monthlyRent && (
@@ -509,8 +506,9 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
               <input
                 type="number"
                 min="0"
+                placeholder="0"
                 value={formData.securityDeposit}
-                onChange={(e) => setFormData({ ...formData, securityDeposit: Number(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, securityDeposit: e.target.value === '' ? '' : Number(e.target.value) })}
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl outline-none font-mono"
               />
             </div>
@@ -565,7 +563,7 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">Transaction Ref # (optional)</label>
                   <input
                     type="text"
-                    placeholder="e.g. UPI Ref / Bank UTR"
+                    placeholder="e.g. UPI Ref / Bank UTR / Cheque No."
                     value={formData.referenceNumber}
                     onChange={(e) => setFormData({ ...formData, referenceNumber: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg outline-none font-mono"
@@ -632,7 +630,7 @@ export const RentalCreateModal: React.FC<RentalCreateModalProps> = ({
             <label className="block text-[11px] font-bold text-slate-700 mb-1">Installation Address</label>
             <input
               type="text"
-              placeholder="e.g. Flat 402, Green Meadows, MG Road"
+              placeholder="e.g. Street address, apartment / suite number, city"
               value={formData.installationAddress}
               onChange={(e) => setFormData({ ...formData, installationAddress: e.target.value })}
               className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl outline-none"

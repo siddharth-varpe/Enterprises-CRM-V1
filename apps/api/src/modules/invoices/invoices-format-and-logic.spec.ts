@@ -270,11 +270,11 @@ describe('SR Enterprises CRM Invoice Format + End-to-End Logic Tests', () => {
         "has_po_number" => strpos($html, "PO-VERIFY-123") !== false,
         "has_notes" => strpos($html, "1 Years Warranty On Ele Spears 1 Service Free") !== false,
         "has_bank_details" => stripos($html, "Bank Details") !== false,
-        "has_au_bank" => stripos($html, "AU Small Finance Bank") !== false,
-        "has_account_no" => stripos($html, "2602245912923632") !== false,
-        "has_ifsc" => stripos($html, "AUBL0002459") !== false,
+        "has_sbi_bank" => stripos($html, "State Bank of India") !== false,
+        "has_account_no" => stripos($html, "30998877665") !== false,
+        "has_ifsc" => stripos($html, "SBIN0001234") !== false,
         "has_payment_qr" => stripos($html, "Payment QR Code") !== false,
-        "has_upi_id" => stripos($html, "srenterprises6711@aubank") !== false,
+        "has_upi_id" => stripos($html, "enterprises.crm@upi") !== false,
         "has_terms" => stripos($html, "Terms and Conditions") !== false,
         "has_signatory" => stripos($html, "Authorised Signatory") !== false,
       ];
@@ -295,7 +295,7 @@ describe('SR Enterprises CRM Invoice Format + End-to-End Logic Tests', () => {
     expect(results.has_po_number).toBe(true);
     expect(results.has_notes).toBe(true);
     expect(results.has_bank_details).toBe(true);
-    expect(results.has_au_bank).toBe(true);
+    expect(results.has_sbi_bank).toBe(true);
     expect(results.has_account_no).toBe(true);
     expect(results.has_ifsc).toBe(true);
     expect(results.has_payment_qr).toBe(true);

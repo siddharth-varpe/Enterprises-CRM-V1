@@ -389,18 +389,18 @@ class PdfInvoiceGenerator {
             <td style="width: 26%; border-right: 1.5px solid #000; padding: 4px 6px; vertical-align: top;">
                 <div style="font-size: 8px; font-weight: bold; margin-bottom: 3px; color: #000;">Bank Details</div>
                 <div style="font-size: 7px; line-height: 1.5; color: #111;">
-                    <strong>Bank:</strong> AU Small Finance Bank<br/>
-                    <strong>Name:</strong> S R Enterprises<br/>
-                    <strong>A/c No:</strong> 2602245912923632<br/>
-                    <strong>IFSC:</strong> AUBL0002459<br/>
-                    <strong>Branch:</strong> Pimpri, Pune
+                    <strong>Bank:</strong> State Bank of India<br/>
+                    <strong>Name:</strong> Enterprises CRM<br/>
+                    <strong>A/c No:</strong> 30998877665<br/>
+                    <strong>IFSC:</strong> SBIN0001234<br/>
+                    <strong>Branch:</strong> Main Branch, Pune
                 </div>
             </td>
             <td style="width: 24%; border-right: 1.5px solid #000; padding: 4px 6px; vertical-align: top;">
                 <div style="font-size: 8px; font-weight: bold; margin-bottom: 2px; color: #000;">Payment QR Code</div>
                 <div style="font-size: 6.8px; line-height: 1.25; color: #111;">
                     Scan &amp; Pay (UPI)<br/>
-                    <strong>UPI:</strong> srenterprises6711@aubank
+                    <strong>UPI:</strong> enterprises.crm@upi
                 </div>
                 <div style="margin-top: 4px; text-align: left;">
                     <img src="{$qrSvg}" alt="Payment QR Code" style="width: 52px; height: 52px; display: inline-block;" />
@@ -409,13 +409,10 @@ class PdfInvoiceGenerator {
             <td style="width: 32%; border-right: 1.5px solid #000; padding: 4px 6px; vertical-align: top;">
                 <div style="font-size: 8px; font-weight: bold; margin-bottom: 2px; color: #000;">Terms and Conditions</div>
                 <div style="font-size: 6.5px; line-height: 1.25; color: #222;">
-                    1) Except Breakage &amp; Pump In AMC<br/>
-                    2) T&amp;C Apply For AMC &amp; Warranty<br/>
-                    3) Dust &amp; Soil Damage Not Cover<br/>
-                    4) Any Other Issue Service Charge Applicable<br/>
-                    5) GST Bill Extra Charges Applicable<br/>
-                    6) New Machine Install Advance Payment 80%<br/>
-                    7) Commercial Use Unit No Warranty
+                    1) Goods once sold will not be taken back or exchanged<br/>
+                    2) Warranty as per manufacturer terms &amp; conditions<br/>
+                    3) Service charges applicable for out-of-warranty services<br/>
+                    4) Subject to local jurisdiction
                 </div>
             </td>
             <td style="width: 18%; padding: 4px 6px; vertical-align: top; text-align: center;">
@@ -424,7 +421,7 @@ class PdfInvoiceGenerator {
                 </div>
                 <div style="font-size: 7.5px; font-weight: bold; color: #000; line-height: 1.2;">
                     Authorised Signatory For<br/>
-                    SR ENTERPRISES
+                    ENTERPRISES CRM
                 </div>
             </td>
         </tr>
@@ -457,7 +454,7 @@ HTML;
     }
 
     /**
-     * Real AU Small Finance Bank UPI QR Code (srenterprises6711@aubank) as base64 PNG
+     * Enterprises CRM UPI QR Code (enterprises.crm@upi) as base64 PNG
      */
     private static function getQrCodeSvgBase64(): string {
         return 'data:image/png;base64,' . InvoiceAssets::$AU_BANK_QR_B64;

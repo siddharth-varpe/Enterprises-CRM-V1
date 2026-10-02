@@ -42,30 +42,29 @@ describe('CustomerFormModal Component', () => {
       </QueryClientProvider>
     );
 
-  it('renders creation form modal with required identity fields and optional address dropdown', () => {
+  it('renders creation form modal with required identity fields and direct customer address fields', () => {
     renderModal(true);
     expect(screen.getByText('Add New Customer')).toBeInTheDocument();
     expect(screen.getByLabelText(/Full Name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Phone Number/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/SELECT SERVICE & INSTALLATION ADDRESS/i)).toBeInTheDocument();
-    expect(screen.getByText('Create Customer')).toBeInTheDocument();
-  });
-
-  it('TEST 1 & 2: renders optional dropdown with skip/select options, and displays address fields when selected', () => {
-    renderModal(true);
-    const selectEl = screen.getByLabelText(/SELECT SERVICE & INSTALLATION ADDRESS/i) as HTMLSelectElement;
-    expect(selectEl).toBeInTheDocument();
-    expect(selectEl.options[0].text).toContain('-- Select / Add Service Address (Optional) --');
-    
-    // Select Address #1 to expand the form fields
-    fireEvent.change(selectEl, { target: { value: '0' } });
     expect(screen.getByLabelText(/Address Line 1/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/City/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/State/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Pincode/i)).toBeInTheDocument();
+    expect(screen.getByText('Create Customer')).toBeInTheDocument();
   });
 
-  it('TEST 3, 4, 5: Customer with multiple addresses populates dropdown and switches active fields seamlessly', () => {
+  it('TEST 1 & 2: displays address input fields directly without requiring dropdown selection', () => {
+    renderModal(true);
+    // Address fields are rendered directly without any dropdown
+    expect(screen.queryByLabelText(/SELECT SERVICE & INSTALLATION ADDRESS/i)).toBeNull();
+    const addressInput = screen.getByLabelText(/Address Line 1/i);
+    expect(addressInput).toBeInTheDocument();
+    fireEvent.change(addressInput, { target: { value: 'Flat 101, Galaxy Heights' } });
+    expect(screen.getByDisplayValue('Flat 101, Galaxy Heights')).toBeInTheDocument();
+  });
+
+  it('TEST 3, 4, 5: Customer with multiple addresses displays all address records directly', () => {
     const mockCustomer: any = {
       id: 'cust-multi-1',
       customerNumber: 'CUST-2026-0002',
@@ -77,7 +76,7 @@ describe('CustomerFormModal Component', () => {
         {
           id: 'addr-1',
           addressType: 'SERVICE',
-          addressLine1: 'Main Service Location - Flat 402',
+          addressLine1: 'Flat 402, Green Park',
           landmark: 'Opp Metro Pillar 42',
           city: 'Pune',
           state: 'Maharashtra',
@@ -99,36 +98,18 @@ describe('CustomerFormModal Component', () => {
 
     renderModal(true, mockCustomer);
 
-    // Verify Dropdown shows optional label + both addresses
-    const selectEl = screen.getByLabelText(/SELECT SERVICE & INSTALLATION ADDRESS/i) as HTMLSelectElement;
-    expect(selectEl).toBeInTheDocument();
-    expect(selectEl.options.length).toBe(3); // 1 optional skip + 2 addresses
-    expect(selectEl.options[1].text).toContain('Address #1 (Default Service Location)');
-    expect(selectEl.options[1].text).toContain('Pune');
-    expect(selectEl.options[2].text).toContain('Address #2');
-    expect(selectEl.options[2].text).toContain('Pimpri');
-
-    // TEST 4: Address #1 data is initially populated because customer had existing address
-    expect(screen.getByDisplayValue('Main Service Location - Flat 402')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Pune')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('411017')).toBeInTheDocument();
-
-    // TEST 5: Select Address #2 from dropdown
-    fireEvent.change(selectEl, { target: { value: '1' } });
-
-    // Address #2 data is now populated
+    // Both addresses are directly rendered in the form
+    expect(screen.getByText('Address #1')).toBeInTheDocument();
+    expect(screen.getByText('Address #2')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Flat 402, Green Park')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Branch Office - Shop 12')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Pimpri')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('411018')).toBeInTheDocument();
-    expect(screen.queryByDisplayValue('Main Service Location - Flat 402')).toBeNull();
-
-    // Switch back to Address #1
-    fireEvent.change(selectEl, { target: { value: '0' } });
-    expect(screen.getByDisplayValue('Main Service Location - Flat 402')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Pune')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Pimpri')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('411017')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('411018')).toBeInTheDocument();
   });
 
-  it('TEST 6 & 7: Add another address appends new selectable address to dropdown and expands form', () => {
+  it('TEST 6 & 7: Add another address appends new address block with remove capability', () => {
     renderModal(true);
 
     const addBtn = screen.getByRole('button', { name: /Add Another Address/i });
@@ -136,14 +117,17 @@ describe('CustomerFormModal Component', () => {
 
     fireEvent.click(addBtn);
 
-    const selectEl = screen.getByLabelText(/SELECT SERVICE & INSTALLATION ADDRESS/i) as HTMLSelectElement;
-    expect(selectEl.options.length).toBe(3); // 1 optional skip + 2 addresses
-    expect(selectEl.value).toBe('1'); // Automatically selects newly added address
-    expect(screen.getAllByText(/Address #2/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByLabelText(/Address Line 1/i)).toBeInTheDocument();
+    // Address #2 block is now present with remove button
+    expect(screen.getByText('Address #2')).toBeInTheDocument();
+    const removeBtns = screen.getAllByRole('button', { name: /Remove/i });
+    expect(removeBtns.length).toBeGreaterThanOrEqual(1);
+
+    // Click remove to remove Address #2
+    fireEvent.click(removeBtns[1] || removeBtns[0]);
+    expect(screen.queryByText('Address #2')).toBeNull();
   });
 
-  it('TEST 8, 9, 10: Editing an address updates only that specific address record and preserves unrelated customer fields', () => {
+  it('TEST 8, 9, 10: Editing an address updates specific address fields and preserves customer fields', () => {
     const mockCustomer: any = {
       id: 'cust-edit-1',
       customerNumber: 'CUST-2026-0003',
@@ -162,29 +146,19 @@ describe('CustomerFormModal Component', () => {
           postalCode: '411001',
           isDefault: true,
         },
-        {
-          id: 'addr-2',
-          addressType: 'SERVICE',
-          addressLine1: 'Warehouse 4',
-          city: 'Chakan',
-          state: 'Maharashtra',
-          postalCode: '410501',
-          isDefault: false,
-        },
       ],
     };
 
     renderModal(true, mockCustomer);
-
-    const selectEl = screen.getByLabelText(/SELECT SERVICE & INSTALLATION ADDRESS/i) as HTMLSelectElement;
-    fireEvent.change(selectEl, { target: { value: '1' } });
 
     // Verify identity fields are intact
     expect(screen.getByDisplayValue('Sunil Sharma')).toBeInTheDocument();
     expect(screen.getByDisplayValue('9826111222')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Sharma RO Systems')).toBeInTheDocument();
 
-    // Verify warehouse 4 is displayed
-    expect(screen.getByDisplayValue('Warehouse 4')).toBeInTheDocument();
+    // Verify address field is intact and editable
+    const addrInput = screen.getByDisplayValue('Office 101');
+    fireEvent.change(addrInput, { target: { value: 'Office 202' } });
+    expect(screen.getByDisplayValue('Office 202')).toBeInTheDocument();
   });
 });

@@ -15,7 +15,7 @@ export interface ServiceItem {
   serviceClassification: 'GENERAL' | 'WARRANTY';
   scheduledDate: string;
   scheduledTimeSlot: string | null;
-  status: 'SCHEDULED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE';
+  status: 'SCHEDULED' | 'ASSIGNED' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE';
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   customerNotes: string | null;
   internalNotes: string | null;
@@ -40,6 +40,8 @@ export interface ServiceItem {
   jobCardId: string | null;
   jobCardNumber: string | null;
   jobCardStatus: string | null;
+  jobCardTechnicianNotes?: string | null;
+  technicianNotes?: string | null;
   totalCharges?: string | number | null;
   paidAmount?: string;
   outstandingAmount?: string;

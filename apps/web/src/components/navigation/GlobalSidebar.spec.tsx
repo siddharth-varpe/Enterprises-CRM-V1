@@ -47,10 +47,10 @@ describe('Master GlobalSidebar Component', () => {
     useUIStore.getState().expandSidebar();
   });
 
-  it('renders branding hierarchy: Logo, SR ENTERPRISES, and CRM in expanded state', () => {
+  it('renders branding hierarchy: Logo, ENTERPRISES, and CRM in expanded state', () => {
     render(<GlobalSidebar activePath="/dashboard" />);
 
-    expect(screen.getByText('SR ENTERPRISES')).toBeDefined();
+    expect(screen.getByText('ENTERPRISES')).toBeDefined();
     expect(screen.getByText('CRM')).toBeDefined();
     expect(screen.getByRole('complementary', { name: /master global navigation sidebar/i })).toBeDefined();
   });

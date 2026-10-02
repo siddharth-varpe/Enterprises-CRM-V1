@@ -11,11 +11,13 @@ lerna-debug.log*
 .env
 .env.*
 !.env.example
+maps_credentials.md
 
 # Build Outputs & Bundles
 dist/
 build/
 out/
+graphify-out/
 .next/
 .turbo/
 *.tsbuildinfo

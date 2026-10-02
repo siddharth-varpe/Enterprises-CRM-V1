@@ -168,4 +168,65 @@ describe('ScheduleServiceModal', () => {
     const selects = screen.getAllByRole('combobox');
     expect(selects[0]).toHaveValue('cust-1');
   });
+
+  it('does not auto-select machine when customer is selected, and allows admin to enter custom machine name', async () => {
+    const onClose = vi.fn();
+    mockMutateAsync.mockResolvedValueOnce({
+      service: { id: 'srv-2', serviceNumber: 'SRV-2026-0002' },
+    });
+
+    renderModal({ isOpen: true, onClose });
+
+    // Select customer
+    const customerSelect = screen.getByDisplayValue(/Choose Customer/i);
+    fireEvent.change(customerSelect, { target: { value: 'cust-1' } });
+
+    // Verify machine name input is rendered and is NOT auto-selected (remains empty)
+    const machineInput = screen.getByPlaceholderText(/Enter machine name/i);
+    expect(machineInput).toBeInTheDocument();
+    expect(machineInput).toHaveValue('');
+
+    // Admin enters machine name
+    fireEvent.change(machineInput, { target: { value: 'Kent Grand Plus RO' } });
+    expect(machineInput).toHaveValue('Kent Grand Plus RO');
+
+    // Click submit
+    const submitBtn = screen.getByRole('button', { name: /Confirm & Schedule/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customerId: 'cust-1',
+          machineName: 'Kent Grand Plus RO',
+        })
+      );
+      expect(onClose).toHaveBeenCalled();
+    });
+  });
+
+  it('allows quick-selecting an existing customer machine via chip to populate machine input', () => {
+    renderModal({
+      isOpen: true,
+      onClose: vi.fn(),
+      initialCustomerId: 'cust-1',
+      initialCustomer: {
+        id: 'cust-1',
+        fullName: 'Anil Kumar Sharma',
+        phone: '9123456780',
+        customerNumber: 'CUST-2026-0001',
+      },
+    });
+
+    const machineInput = screen.getByPlaceholderText(/Enter machine name/i);
+    expect(machineInput).toHaveValue('');
+
+    // Click the quick-select chip for AquaPure Pro RO
+    const chipBtn = screen.getByRole('button', { name: /AquaPure Pro RO/i });
+    expect(chipBtn).toBeInTheDocument();
+    fireEvent.click(chipBtn);
+
+    // Input is populated with the selected machine
+    expect(machineInput).toHaveValue('AquaPure Pro RO');
+  });
 });

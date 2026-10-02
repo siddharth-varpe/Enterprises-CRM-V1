@@ -2,22 +2,17 @@ import React from 'react';
 import {
   WifiOff,
   RefreshCw,
-  Search,
   Menu,
-  Bell,
-  LogOut,
-  User as UserIcon,
+  Wrench,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useNetworkStatus } from '../providers/NetworkStatusProvider';
-import { useAuth } from '../providers/AuthBoundary';
 import { useUIStore } from '../stores/ui-store';
-import { DropdownMenu } from '../components/ui/DropdownMenu';
 import { CommandPalette } from '../components/search/CommandPalette';
 import { NotificationCenter } from '../components/notifications/NotificationCenter';
 import { GlobalSidebar } from '../components/navigation/GlobalSidebar';
 import { GlobalFooter } from '../components/navigation/GlobalFooter';
 import { ChatbotWidget } from '../components/chatbot/ChatbotWidget';
-import { useUnreadNotificationCountQuery } from '../modules/notifications/notifications.api';
 import { cn } from '../lib/utils';
 
 export interface AppShellProps {
@@ -27,22 +22,21 @@ export interface AppShellProps {
 }
 
 export function AppShell({ children, activePath = '/dashboard', onNavigate }: AppShellProps) {
+  const navigate = useNavigate();
   const { status, isOnline } = useNetworkStatus();
-  const { user, logout } = useAuth();
-  const { data: unreadData } = useUnreadNotificationCountQuery();
-  const unreadCount = unreadData?.unreadCount ?? 0;
   const {
     sidebarState,
     mobileNavOpen,
     collapseSidebar,
     setMobileNavOpen,
-    setCommandPaletteOpen,
-    setNotificationCenterOpen,
-    resetSidebarOnLogout,
   } = useUIStore();
 
   const handleNavClick = (path: string) => {
-    onNavigate?.(path);
+    if (onNavigate) {
+      onNavigate(path);
+    } else {
+      navigate(path);
+    }
     setMobileNavOpen(false);
   };
 
@@ -52,27 +46,6 @@ export function AppShell({ children, activePath = '/dashboard', onNavigate }: Ap
       collapseSidebar();
     }
   };
-
-  const userMenuItems = [
-    {
-      id: 'profile',
-      label: 'My Account',
-      icon: <UserIcon className="w-4 h-4 text-slate-500" />,
-      onClick: () => handleNavClick('/settings'),
-    },
-    'divider' as const,
-    {
-      id: 'logout',
-      label: 'Sign Out',
-      destructive: true,
-      icon: <LogOut className="w-4 h-4 text-danger-600" />,
-      onClick: async () => {
-        resetSidebarOnLogout();
-        await logout();
-        onNavigate?.('/login');
-      },
-    },
-  ];
 
   const isDesktopExpandedOffset =
     sidebarState === 'expanded' || sidebarState === 'manuallyExpanded';
@@ -134,74 +107,26 @@ export function AppShell({ children, activePath = '/dashboard', onNavigate }: Ap
             {/* Breadcrumb / Section context */}
             <div className="flex flex-col min-w-0">
               <span className="font-display font-extrabold text-slate-900 text-xs sm:text-sm tracking-tight block truncate max-w-[150px] xs:max-w-[200px] sm:max-w-none">
-                SR ENTERPRISES CRM
+                ENTERPRISES CRM
               </span>
               <span className="text-[9px] sm:text-[10px] text-slate-500 font-semibold uppercase tracking-wider hidden xs:block">
-                Water Purifier &amp; RO Management
+                Commercial Service &amp; Sales Management
               </span>
             </div>
           </div>
 
-          {/* Header Actions: Search, Connectivity, Notifications, User Profile */}
-          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0" onClick={(e) => e.stopPropagation()}>
-            {/* Mobile Search Trigger */}
+          {/* Header Action: Quick Navigation to Technician Login */}
+          <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
-              onClick={() => setCommandPaletteOpen(true)}
-              className="md:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
-              aria-label="Open search dialog"
+              onClick={() => handleNavClick('/technician/login')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-lg border border-slate-200/90 transition-all shadow-2xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500"
+              title="Go to Technician Login"
+              aria-label="Technician Login"
             >
-              <Search className="w-4 h-4 text-slate-500" />
+              <Wrench className="w-3.5 h-3.5 text-slate-600" />
+              <span>Technician Login</span>
             </button>
-
-            {/* Global Search Trigger (Ctrl+K) */}
-            <button
-              type="button"
-              onClick={() => setCommandPaletteOpen(true)}
-              className="hidden md:flex items-center justify-between gap-3 bg-slate-50 hover:bg-slate-100 transition-colors px-3 py-1.5 rounded-lg border border-slate-200/90 text-xs text-slate-500 w-64 text-left focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
-              aria-label="Open search dialog (Ctrl+K)"
-            >
-              <div className="flex items-center gap-2">
-                <Search className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-600 font-medium">Search CRM...</span>
-              </div>
-              <kbd className="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-[10px] text-slate-500 font-mono shadow-2xs">
-                Ctrl+K
-              </kbd>
-            </button>
-
-            {/* Connectivity Status Indicator */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100/90 text-[11px] font-semibold text-slate-700 border border-slate-200">
-              <span
-                className={cn(
-                  'w-2 h-2 rounded-full',
-                  isOnline ? 'bg-emerald-600' : 'bg-amber-600'
-                )}
-              />
-              <span className="capitalize">{status}</span>
-            </div>
-
-            {/* User Profile Dropdown Menu */}
-            <DropdownMenu
-              trigger={
-                <button
-                  type="button"
-                  className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
-                  aria-label="User account menu"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[#0B132B] text-white flex items-center justify-center text-xs font-bold font-mono shadow-2xs">
-                    {user?.displayName
-                      ? user.displayName
-                          .split(' ')
-                          .map((n) => n[0])
-                          .slice(0, 2)
-                          .join('')
-                      : 'SR'}
-                  </div>
-                </button>
-              }
-              items={userMenuItems}
-            />
           </div>
         </header>
 

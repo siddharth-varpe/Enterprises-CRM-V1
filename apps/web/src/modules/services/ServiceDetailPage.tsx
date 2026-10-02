@@ -9,6 +9,7 @@ import { CompleteServiceModal } from './components/CompleteServiceModal';
 import { QuickAssignModal } from './components/QuickAssignModal';
 import { EditServiceModal } from './components/EditServiceModal';
 import { RecordPaymentModal } from '../payments/components/RecordPaymentModal';
+import { HoldStatusModal, extractHoldReason } from '../../components/ui/HoldStatusModal';
 import {
   useServiceDetailQuery,
   useNotifyServiceTechnicianWhatsAppMutation,
@@ -35,6 +36,7 @@ import {
   Send,
   AlertCircle,
   Pencil,
+  PauseCircle,
 } from 'lucide-react';
 
 function formatSystemDate(dateVal: string | Date | null | undefined): string {
@@ -86,6 +88,7 @@ export const ServiceDetailPage: React.FC = () => {
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isRecordPaymentModalOpen, setIsRecordPaymentModalOpen] = useState(false);
+  const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
   const [whatsappFeedback, setWhatsappFeedback] = useState<{ type: 'success' | 'error'; message: string; directUrl?: string } | null>(null);
   const [customerWhatsappFeedback, setCustomerWhatsappFeedback] = useState<{ type: 'success' | 'error'; message: string; directUrl?: string } | null>(null);
 
@@ -115,7 +118,7 @@ export const ServiceDetailPage: React.FC = () => {
         const cleanPhone = phone.length === 10 ? `91${phone}` : (phone.length === 11 && !phone.startsWith('91') ? `91${phone}` : phone);
         const dateDisplay = formatSystemDate(service.scheduledDate);
         const timeDisplay = formatSystemTime(service.scheduledDate, service.scheduledTimeSlot);
-        const msg = `New Service Job Assigned\n\nCustomer: ${service.customerName || 'Valued Customer'}\nCustomer Phone: ${service.customerPhone || 'N/A'}\nMachine/Product: ${service.productName || 'RO Purifier'}\nSerial Number: ${service.serialNumber || 'N/A'}\nService Type: ${service.serviceType || 'Periodic Maintenance'}\nVisit Date: ${dateDisplay}\nTime Slot: ${timeDisplay}\nLocation: ${service.serviceLocation === 'IN_SHOP' ? 'In-Shop' : 'Doorstep'}\nPriority: ${service.priority || 'Normal'}\n\nService #: ${service.serviceNumber}\n\nPlease check the CRM for complete job details.`;
+        const msg = `New Service Job Assigned\n\nCustomer: ${service.customerName || 'Valued Customer'}\nCustomer Phone: ${service.customerPhone || 'N/A'}\nProduct: ${service.productName || 'Product / Equipment'}\nSerial Number: ${service.serialNumber || 'N/A'}\nService Type: ${service.serviceType || 'Periodic Maintenance'}\nVisit Date: ${dateDisplay}\nTime Slot: ${timeDisplay}\nLocation: ${service.serviceLocation === 'IN_SHOP' ? 'In-Shop' : 'Doorstep'}\nPriority: ${service.priority || 'Normal'}\n\nService #: ${service.serviceNumber}\n\nPlease check the CRM for complete job details.`;
         const directUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
         if (typeof window !== 'undefined') {
           window.open(directUrl, '_blank', 'noopener,noreferrer');
@@ -156,7 +159,7 @@ export const ServiceDetailPage: React.FC = () => {
         const dateDisplay = formatSystemDate(service.scheduledDate);
         const timeDisplay = formatSystemTime(service.scheduledDate, service.scheduledTimeSlot);
         const techInfo = service.technicianPhone ? `${service.technicianName || 'Specialist'} (${service.technicianPhone})` : (service.technicianName || 'Assigned Specialist');
-        const msg = `Hello ${service.customerName || 'Valued Customer'},\n\nYour service visit with SR Enterprises has been confirmed!\n\nService #: ${service.serviceNumber}\nMachine: ${service.productName || 'RO Purifier'}${service.serialNumber ? ` (SN: ${service.serialNumber})` : ''}\nDate: ${dateDisplay}\nTime Slot: ${timeDisplay}\nAssigned Technician: ${techInfo}\n\nOur technician will contact you prior to arrival. Thank you!`;
+        const msg = `Hello ${service.customerName || 'Valued Customer'},\n\nYour service visit with Enterprises CRM has been confirmed!\n\nService #: ${service.serviceNumber}\nProduct: ${service.productName || 'Product / Equipment'}${service.serialNumber ? ` (SN: ${service.serialNumber})` : ''}\nDate: ${dateDisplay}\nTime Slot: ${timeDisplay}\nAssigned Technician: ${techInfo}\n\nOur technician will contact you prior to arrival. Thank you!`;
         const directUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
         if (typeof window !== 'undefined') {
           window.open(directUrl, '_blank', 'noopener,noreferrer');
@@ -202,6 +205,8 @@ export const ServiceDetailPage: React.FC = () => {
   }
 
   const isCompleted = service.status === 'COMPLETED';
+  const isOnHold = service.status === 'ON_HOLD' || (service as any).jobCardStatus === 'ON_HOLD';
+  const holdNotes = service.technicianNotes || (service as any).jobCardTechnicianNotes || service.internalNotes;
   const totalBilled = Number(service.invoice?.totalAmount || service.totalCharges || 0);
   const validPayments = ((service as any).payments || []).filter((p: any) => p.status === 'COMPLETED');
   const paidAmount = validPayments.length > 0
@@ -230,10 +235,23 @@ export const ServiceDetailPage: React.FC = () => {
             <h1 className="text-2xl font-extrabold text-slate-900 font-mono tracking-tight">
               {service.serviceNumber}
             </h1>
-            <StatusBadge
-              status={isCompleted ? 'active' : 'warning'}
-              label={(service.status || 'SCHEDULED').replace(/_/g, ' ')}
-            />
+            {isOnHold ? (
+              <button
+                type="button"
+                onClick={() => setIsHoldModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer shadow-xs group"
+                title="Click to view hold status note"
+              >
+                <PauseCircle className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform shrink-0" />
+                <span>On Hold</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              </button>
+            ) : (
+              <StatusBadge
+                status={isCompleted ? 'active' : 'warning'}
+                label={(service.status || 'SCHEDULED').replace(/_/g, ' ')}
+              />
+            )}
             {service.serviceClassification === 'WARRANTY' ? (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -301,6 +319,35 @@ export const ServiceDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* On Hold Alert Banner */}
+      {isOnHold && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/20">
+              <PauseCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-900">Service is Currently On Hold</h4>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                  ON HOLD
+                </span>
+              </div>
+              <p className="text-xs text-slate-700 mt-1 font-medium">
+                {extractHoldReason(holdNotes).reason}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsHoldModalOpen(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-900 font-bold text-xs hover:bg-amber-100/70 transition-colors cursor-pointer shrink-0 shadow-xs"
+          >
+            View Hold Note
+          </button>
+        </div>
+      )}
 
       {/* Main 2-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -689,6 +736,21 @@ export const ServiceDetailPage: React.FC = () => {
         onSuccess={() => {
           toast.success('Payment recorded successfully.', 'Payment Saved');
           setIsRecordPaymentModalOpen(false);
+        }}
+      />
+
+      {/* Hold Status Small Card Modal */}
+      <HoldStatusModal
+        isOpen={isHoldModalOpen}
+        onClose={() => setIsHoldModalOpen(false)}
+        data={{
+          serviceNumber: service.serviceNumber,
+          jobCardNumber: service.jobCardNumber,
+          technicianName: service.technicianName,
+          technicianPhone: service.technicianPhone,
+          customerName: service.customerName,
+          notes: holdNotes,
+          updatedAt: (service as any).updatedAt || service.createdAt,
         }}
       />
     </div>

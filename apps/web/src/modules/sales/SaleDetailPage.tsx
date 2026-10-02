@@ -13,7 +13,7 @@ import { useToast } from '../../providers/ToastProvider';
 import { useAuth } from '../../providers/AuthBoundary';
 import { sendInvoiceViaWhatsApp } from '../../lib/whatsapp';
 import { formatINR, formatDate } from '../../lib/formatters';
-import srEnterprisesQr from '../../assets/sr-enterprises-upi-qr.png';
+import enterprisesCrmQr from '../../assets/enterprises-crm-upi-qr.png';
 import {
   ShoppingBag,
   User,
@@ -145,8 +145,8 @@ export const SaleDetailPage: React.FC = () => {
 
   const handleCopyUpi = () => {
     if (navigator.clipboard) {
-      navigator.clipboard.writeText('srenterprises6711@aubank');
-      toast.success('UPI ID copied: srenterprises6711@aubank', 'Copied to Clipboard');
+      navigator.clipboard.writeText('enterprises.crm@upi');
+      toast.success('UPI ID copied: enterprises.crm@upi', 'Copied to Clipboard');
     }
   };
 
@@ -404,11 +404,11 @@ export const SaleDetailPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-4">
-              {/* Official AU Bank UPI QR Code */}
+              {/* Official Enterprises CRM UPI QR Code */}
               <div className="p-2 bg-white rounded-xl shadow-xs border border-slate-200 mb-3">
                 <img
-                  src={srEnterprisesQr}
-                  alt="S R ENTERPRISES AU Bank UPI Payment QR Code"
+                  src={enterprisesCrmQr}
+                  alt="Enterprises CRM UPI Payment QR Code"
                   className="w-44 h-44 object-contain rounded-md"
                 />
               </div>
@@ -420,7 +420,7 @@ export const SaleDetailPage: React.FC = () => {
                 <div className="text-2xs text-slate-500 flex items-center justify-center gap-1">
                   <span>UPI ID:</span>
                   <code className="bg-slate-200/80 text-slate-800 px-1.5 py-0.5 rounded font-mono font-bold text-3xs">
-                    srenterprises6711@aubank
+                    enterprises.crm@upi
                   </code>
                   <button
                     type="button"
@@ -435,7 +435,7 @@ export const SaleDetailPage: React.FC = () => {
                   <span className="px-1.5 py-0.5 bg-white rounded border border-slate-200 shadow-3xs">Paytm</span>
                   <span className="px-1.5 py-0.5 bg-white rounded border border-slate-200 shadow-3xs">GPay</span>
                   <span className="px-1.5 py-0.5 bg-white rounded border border-slate-200 shadow-3xs">PhonePe</span>
-                  <span className="px-1.5 py-0.5 bg-white rounded border border-slate-200 shadow-3xs">AU 30+</span>
+                  <span className="px-1.5 py-0.5 bg-white rounded border border-slate-200 shadow-3xs">BHIM UPI</span>
                 </div>
               </div>
             </div>

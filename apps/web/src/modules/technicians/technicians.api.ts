@@ -28,6 +28,7 @@ export interface TechnicianItem {
   phone: string;
   email: string | null;
   status: 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE';
+  portalEnabled?: boolean;
   skills: string[] | null;
   address: string | null;
   emergencyContact: string | null;
@@ -166,5 +167,55 @@ export function useDeleteTechnicianMutation() {
     onSuccess: () => {
       notifyTechnicianChanged(queryClient);
     },
+  });
+}
+
+/**
+ * Mutation to toggle technician portal access
+ */
+export function useTogglePortalAccessMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, portalEnabled }: { id: string; portalEnabled: boolean }) => {
+      const response = await apiClient.patch<{ success: boolean; data: any; message?: string }>(
+        `/technicians/${id}/portal-access`,
+        { portalEnabled }
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      notifyTechnicianChanged(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['technicians'] });
+      queryClient.invalidateQueries({ queryKey: ['technician', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['technician-360', variables.id] });
+    },
+  });
+}
+
+export type {
+  TechnicianAdmin360Profile,
+  TechnicianAdminServiceItem,
+  TechnicianAdminJobCardItem,
+  TechnicianAdminCustomerItem,
+  TechnicianAdminAssetItem,
+  TechnicianAdminPartItem,
+  TechnicianAdminPaymentItem,
+} from '@crm/types';
+
+import type { TechnicianAdmin360Profile } from '@crm/types';
+
+/**
+ * Hook to query comprehensive Admin-side 360° Technician Profile
+ */
+export function useTechnician360Query(id: string | undefined) {
+  return useQuery({
+    queryKey: ['technician-360', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const response = await apiClient.get<TechnicianAdmin360Profile>(`/technicians/${id}/360`);
+      return (response as any)?.data?.data ?? response?.data ?? response;
+    },
+    enabled: Boolean(id),
+    staleTime: 30_000,
   });
 }

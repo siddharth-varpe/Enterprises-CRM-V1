@@ -2,7 +2,7 @@
   "name": "@crm/desktop",
   "version": "1.0.0",
   "private": true,
-  "description": "SR Enterprises CRM - Local Desktop Application",
+  "description": "Enterprises CRM - Local Desktop Application",
   "type": "module",
   "main": "dist/main.js",
   "scripts": {

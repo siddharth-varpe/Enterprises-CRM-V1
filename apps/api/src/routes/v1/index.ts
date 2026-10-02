@@ -75,7 +75,7 @@ export const v1Routes: FastifyPluginAsync = async (fastify) => {
   // Sales & Commercial Transactions
   await fastify.register(salesRoutes, { prefix: '/sales' });
 
-  // Rental Agreements & RO Machine Subscriptions
+  // Rental Agreements & Equipment Subscriptions
   await fastify.register(rentalRoutes, { prefix: '/rentals' });
 
   // Date-Wise Dues & Scheduled Activities
@@ -141,4 +141,13 @@ export const v1Routes: FastifyPluginAsync = async (fastify) => {
   // Trainable Knowledge Chatbot Engine
   const { chatbotRoutes } = await import('../../modules/chatbot/chatbot.routes');
   await fastify.register(chatbotRoutes, { prefix: '/chatbot' });
+
+  // Technician Portal Isolated Authentication & Operation APIs
+  const { technicianAuthRoutes, technicianPortalRoutes } = await import('../../modules/technician-portal/technician-portal.routes');
+  await fastify.register(technicianAuthRoutes, { prefix: '/technician-auth' });
+  await fastify.register(technicianPortalRoutes, { prefix: '/technician' });
+
+  // Google Maps Platform & Live Technician Tracking APIs
+  const { mapsRoutes } = await import('../../modules/maps/maps.routes');
+  await fastify.register(mapsRoutes, { prefix: '/maps' });
 };

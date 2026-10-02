@@ -60,7 +60,7 @@ export const RentalDetailModal: React.FC<RentalDetailModalProps> = ({
           {rental && <RentalStatusBadge status={rental.rentalStatus} type="rental" />}
         </div>
       }
-      description="Authoritative subscription records, machine details, and recurring payment ledger."
+      description="Authoritative subscription records, product & equipment details, and recurring payment ledger."
     >
       {isLoading || !rental ? (
         <div className="py-16 text-center text-slate-400 text-xs animate-pulse">
@@ -153,11 +153,11 @@ export const RentalDetailModal: React.FC<RentalDetailModalProps> = ({
             <div className="bg-white rounded-xl p-4 border border-slate-200/90 space-y-2.5 shadow-2xs">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
                 <Package className="w-4 h-4 text-purple-600" />
-                <span>Rented Machine Specifications</span>
+                <span>Rented Product &amp; Equipment Details</span>
               </div>
               <div className="text-xs space-y-1.5 pt-1">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Machine Model:</span>
+                  <span className="text-slate-500">Product / Model:</span>
                   <span className="font-bold text-slate-900">{rental.machineModel}</span>
                 </div>
                 <div className="flex justify-between">
@@ -167,12 +167,12 @@ export const RentalDetailModal: React.FC<RentalDetailModalProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Machine Type:</span>
+                  <span className="text-slate-500">Category / Type:</span>
                   <span className="text-slate-800 font-semibold">{rental.machineType}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Purification Capacity:</span>
-                  <span className="text-slate-800 font-mono">{rental.capacityLph || '15 LPH'}</span>
+                  <span className="text-slate-500">Specifications / Capacity:</span>
+                  <span className="text-slate-800 font-mono">{rental.capacityLph || 'Standard'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Condition at Install:</span>
@@ -223,7 +223,7 @@ export const RentalDetailModal: React.FC<RentalDetailModalProps> = ({
 
             {rental.rentalStatus === 'RETURNED' && (
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1 text-xs mt-2">
-                <div className="font-bold text-slate-800">Machine Return Record</div>
+                <div className="font-bold text-slate-800">Equipment Return Record</div>
                 <div className="text-slate-600 text-[11px]">
                   Returned on {rental.returnDate ? new Date(rental.returnDate).toLocaleDateString() : 'N/A'} • Condition: {rental.returnCondition || 'Good'}
                 </div>

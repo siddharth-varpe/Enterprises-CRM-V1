@@ -58,6 +58,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [machineName, setMachineName] = useState('');
 
   const [formData, setFormData] = useState<Partial<UpdateServiceInput> & { customerId?: string }>({
     customerId: '',
@@ -116,6 +117,13 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
         partsCharges: srv.partsCharges ? Number(srv.partsCharges) : 0,
         totalCharges: srv.totalCharges ? Number(srv.totalCharges) : 0,
       });
+      const initialMachine =
+        srv.productName && srv.productName !== 'Customer RO Water Purifier'
+          ? srv.productName
+          : srv.customName && srv.customName !== 'Customer RO Water Purifier'
+          ? srv.customName
+          : '';
+      setMachineName(initialMachine);
       setCustomerSearch('');
       setFormError(null);
       setActiveTab('details');
@@ -192,7 +200,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
       if (a && a.id) {
         map.set(a.id, {
           id: a.id,
-          productName: a.customName || a.product?.name || a.productName || 'RO Purifier / Spare',
+          productName: a.customName || a.product?.name || a.productName || 'Product / Spare',
           productBrand: a.product?.brand || a.productBrand || '',
           productSku: a.product?.sku || a.productSku || '',
           serialNumber: a.serialNumber || '',
@@ -212,7 +220,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
             a.productName ||
             (a as any).product?.name ||
             existing?.productName ||
-            'RO Purifier / Spare',
+            'Product / Spare',
           productBrand: a.productBrand || (a as any).product?.brand || existing?.productBrand || '',
           productSku: a.productSku || (a as any).product?.sku || existing?.productSku || '',
         });
@@ -223,7 +231,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     if (service?.assetId && !map.has(service.assetId) && service.customerId === selectedCustomerId) {
       map.set(service.assetId, {
         id: service.assetId,
-        productName: service.productName || 'RO Purifier',
+        productName: service.productName || 'Product / Equipment',
         productBrand: service.productBrand || '',
         productSku: service.productSku || '',
         serialNumber: service.serialNumber || '',
@@ -234,12 +242,20 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
     return Array.from(map.values());
   }, [selectedCustomerId, assetsData, customerDetail, service]);
 
+  const cleanAssetSuggestions = React.useMemo(() => {
+    return assetList.filter((a) => {
+      const name = (a.productName || a.customName || '').trim().toLowerCase();
+      return name && name !== 'customer ro water purifier';
+    });
+  }, [assetList]);
+
   const handleCustomerChange = (custId: string) => {
     setFormData((prev) => ({
       ...prev,
       customerId: custId,
       assetId: '',
     }));
+    setMachineName('');
   };
 
   const handleLaborOrPartsChange = (type: 'labor' | 'parts', val: number) => {
@@ -272,9 +288,24 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
       return;
     }
 
+    const trimmedMachine = machineName.trim();
+    let effectiveAssetId: string | null = formData.assetId || null;
+
+    if (trimmedMachine && assetList.length > 0) {
+      const matched = assetList.find(
+        (a) =>
+          (a.productName && a.productName.toLowerCase() === trimmedMachine.toLowerCase()) ||
+          (a.customName && a.customName.toLowerCase() === trimmedMachine.toLowerCase())
+      );
+      if (matched) {
+        effectiveAssetId = matched.id;
+      }
+    }
+
     const payload: UpdateServiceInput = {
       customerId: formData.customerId,
-      assetId: formData.assetId || null,
+      assetId: effectiveAssetId,
+      machineName: trimmedMachine || undefined,
       serviceType: formData.serviceType,
       serviceLocation: formData.serviceLocation,
       serviceClassification: formData.serviceClassification,
@@ -423,36 +454,87 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
               />
             </div>
 
-            {/* 2. Customer Machine / Purchased Product */}
+            {/* 2. Customer Machine / Equipment Name */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                   <Cpu className="w-3.5 h-3.5 text-slate-500" />
-                  Customer's Machine / Asset
+                  Product / Equipment Name
                 </label>
-                {formData.customerId && (
+                {formData.customerId && cleanAssetSuggestions.length > 0 && (
                   <span className="text-[11px] font-medium text-slate-500">
-                    {isLoadingAssets
-                      ? 'Loading assets...'
-                      : `${assetList.length} registered item(s) found`}
+                    {cleanAssetSuggestions.length} registered item(s) on file
                   </span>
                 )}
               </div>
 
-              <Select
-                options={[
-                  { value: '', label: '— No specific asset / General machine —' },
-                  ...assetList.map((a) => ({
-                    value: a.id,
-                    label: `${a.productName || a.customName || 'Product'} ${
-                      a.serialNumber ? `(SN: ${a.serialNumber})` : ''
-                    } - ${a.assetNumber}`,
-                  })),
-                ]}
-                value={formData.assetId || ''}
-                onChange={(e) => setFormData((prev) => ({ ...prev, assetId: e.target.value }))}
-                disabled={!formData.customerId || isLoadingAssets}
-              />
+              <div className="relative">
+                <Input
+                  type="text"
+                  list="edit-customer-machine-suggestions"
+                  placeholder={
+                    !formData.customerId
+                      ? 'Select customer above first, or enter product name directly...'
+                      : 'Enter product or equipment name...'
+                  }
+                  value={machineName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setMachineName(val);
+                    const matched = assetList.find(
+                      (a) =>
+                        (a.productName && a.productName.toLowerCase() === val.trim().toLowerCase()) ||
+                        (a.customName && a.customName.toLowerCase() === val.trim().toLowerCase())
+                    );
+                    setFormData((prev) => ({
+                      ...prev,
+                      assetId: matched ? matched.id : prev.assetId,
+                    }));
+                  }}
+                />
+
+                <datalist id="edit-customer-machine-suggestions">
+                  {cleanAssetSuggestions.map((a) => (
+                    <option
+                      key={a.id}
+                      value={a.productName || a.customName || 'Product'}
+                    >
+                      {a.serialNumber ? `SN: ${a.serialNumber}` : a.assetNumber || ''}
+                    </option>
+                  ))}
+                </datalist>
+              </div>
+
+              {/* Quick select chips if customer has registered machines */}
+              {formData.customerId && cleanAssetSuggestions.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <span className="text-[11px] text-slate-400">Quick select:</span>
+                  {cleanAssetSuggestions.slice(0, 4).map((a) => {
+                    const label = a.productName || a.customName || 'Product';
+                    const isSelected = machineName.toLowerCase() === label.toLowerCase();
+                    return (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => {
+                          setMachineName(label);
+                          setFormData((prev) => ({ ...prev, assetId: a.id }));
+                        }}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-medium transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary-50 text-primary-700 border-primary-300 font-semibold'
+                            : 'bg-slate-100 hover:bg-primary-50 hover:text-primary-700 text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        <span>{label}</span>
+                        {a.serialNumber && (
+                          <span className="text-slate-400 font-mono text-[10px]">({a.serialNumber})</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* 3. Service Status & Priority */}

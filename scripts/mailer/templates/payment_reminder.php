@@ -12,7 +12,7 @@ $formattedDue = number_format((float)($dueAmount ?? max(0, (float)($totalAmount 
 $formattedDueDate = !empty($dueDate) ? date('d M Y', strtotime($dueDate)) : date('d M Y', strtotime('+7 days'));
 $formattedInvoiceDate = !empty($invoiceDate) ? date('d M Y', strtotime($invoiceDate)) : date('d M Y');
 $cleanInvoiceNo = !empty($invoiceNumber) ? htmlspecialchars($invoiceNumber) : 'INV-XXXX';
-$upiId = !empty($upiId) ? $upiId : 'srenterprises6711@aubank';
+$upiId = !empty($upiId) ? $upiId : 'enterprises.crm@upi';
 
 $isOverdue = (!empty($dueDate) && strtotime($dueDate) < strtotime('today')) && ((float)($dueAmount ?? 0) > 0);
 
@@ -21,7 +21,7 @@ $subject = ($isOverdue ? '⚠️ Payment Overdue: Invoice #' : 'Payment Due Remi
 // Plain Text fallback
 $plainText = "Hello {$customerDisplayName},
 
-This is a friendly reminder regarding your outstanding payment for Invoice #{$cleanInvoiceNo} with SR Enterprises.
+This is a friendly reminder regarding your outstanding payment for Invoice #{$cleanInvoiceNo} with {$companyName}.
 
 PAYMENT DUE
 --------------------------------------------------
@@ -37,7 +37,7 @@ Amount Already Paid: ₹ {$formattedPaid}
 Outstanding Due Amount: ₹ {$formattedDue}
 
 Why timely payment matters?
-Timely payments help us serve you better and ensure uninterrupted care for your RO system.
+Timely payments help us serve you better and ensure uninterrupted service.
 
 QUICK UPI PAYMENT
 UPI ID: {$upiId}
@@ -46,7 +46,7 @@ Accepted: Google Pay, PhonePe, Paytm, BHIM, Bank Transfer
 Need Assistance?
 Helpline: {$supportPhone}
 Email: {$supportEmail}
-SR Enterprises — Reliable Solutions. Pure Performance.
+{$companyName} — Reliable Solutions. Professional Service.
 ";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -79,14 +79,14 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                                 <table border="0" cellpadding="0" cellspacing="0">
                                     <tr>
                                         <td style="width: 40px; height: 40px; background-color: #0B63F6; border-radius: 8px; text-align: center; vertical-align: middle; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: bold; color: #FFFFFF;">
-                                            SR
+                                            CRM
                                         </td>
                                         <td style="padding-left: 12px; vertical-align: middle;">
                                             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 17px; font-weight: bold; color: #FFFFFF; letter-spacing: 0.5px; line-height: 1.2;">
-                                                SR ENTERPRISES
+                                                <?php echo htmlspecialchars($companyName); ?>
                                             </div>
                                             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #93C5FD; margin-top: 2px;">
-                                                Reliable Solutions. Pure Performance.
+                                                Reliable Solutions. Professional Service.
                                             </div>
                                         </td>
                                     </tr>
@@ -110,7 +110,7 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                         Hello <?php echo htmlspecialchars($customerDisplayName); ?>,
                     </div>
                     <div style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 20px;">
-                        This is a friendly reminder regarding your outstanding payment for Invoice <strong>#<?php echo $cleanInvoiceNo; ?></strong> with <strong>SR Enterprises</strong>.
+                        This is a friendly reminder regarding your outstanding payment for Invoice <strong>#<?php echo $cleanInvoiceNo; ?></strong> with <strong><?php echo htmlspecialchars($companyName); ?></strong>.
                     </div>
 
                     <!-- MAIN STATUS CARD: PAYMENT DUE (ORANGE ALERT THEME) -->
@@ -221,13 +221,13 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                                 </div>
                                 <div>Helpline: <strong style="color: #E2E8F0;"><?php echo htmlspecialchars($supportPhone); ?></strong></div>
                                 <div>Email: <strong style="color: #E2E8F0;"><?php echo htmlspecialchars($supportEmail); ?></strong></div>
-                                <div>Address: <span style="color: #CBD5E1;">SR Enterprises — Water Purifier Sales &amp; Services</span></div>
+                                <div>Address: <span style="color: #CBD5E1;"><?php echo htmlspecialchars($companyName); ?> — Commercial Services</span></div>
                                 <div style="margin-top: 8px; color: #64748B;">
-                                    SR Enterprises • Reliable Solutions. Pure Performance.
+                                    <?php echo htmlspecialchars($companyName); ?> • Reliable Solutions. Professional Service.
                                 </div>
                             </td>
                             <td align="right" valign="bottom" style="text-align: right; color: #64748B; font-size: 10px;">
-                                © <?php echo date('Y'); ?> SR Enterprises.<br />All rights reserved.
+                                © <?php echo date('Y'); ?> <?php echo htmlspecialchars($companyName); ?>.<br />All rights reserved.
                             </td>
                         </tr>
                     </table>

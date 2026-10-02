@@ -72,6 +72,20 @@ export class JobCardsService {
           customerName: (jobCard as any).customer?.fullName || (jobCard as any).customerName || 'Customer',
           serviceType: (jobCard as any).service?.serviceType || (jobCard as any).serviceType || 'Service',
         });
+
+        const { domainEventBus } = await import('../notifications/events/event-bus');
+        domainEventBus.publish(
+          'JOB_CARD_ASSIGNED',
+          'JOB_CARD',
+          jobCard.id,
+          {
+            jobCardNumber: jobCard.jobCardNumber,
+            technicianId: input.technicianId,
+            serviceId: jobCard.serviceId,
+            serviceNumber: (jobCard as any).service?.serviceNumber || jobCard.jobCardNumber,
+          },
+          actorId
+        );
       }
     } catch {
       // Non-blocking in-app notification dispatch

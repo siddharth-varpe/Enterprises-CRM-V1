@@ -34,6 +34,7 @@ export const TechnicianModal: React.FC<TechnicianModalProps> = ({
   const [address, setAddress] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
   const [status, setStatus] = useState<'ACTIVE' | 'ON_LEAVE' | 'INACTIVE'>('ACTIVE');
+  const [portalEnabled, setPortalEnabled] = useState(false);
   const [skills, setSkills] = useState<string[]>(['RO Installation', 'Filter Replacement']);
   const [customSkill, setCustomSkill] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export const TechnicianModal: React.FC<TechnicianModalProps> = ({
       setAddress(technician.address || '');
       setEmergencyContact(technician.emergencyContact || '');
       setStatus(technician.status);
+      setPortalEnabled(Boolean(technician.portalEnabled));
       setSkills(technician.skills && technician.skills.length > 0 ? technician.skills : ['RO Installation']);
     } else {
       setFullName('');
@@ -57,6 +59,7 @@ export const TechnicianModal: React.FC<TechnicianModalProps> = ({
       setAddress('');
       setEmergencyContact('');
       setStatus('ACTIVE');
+      setPortalEnabled(false);
       setSkills(['RO Installation', 'Filter Replacement']);
     }
     setError(null);
@@ -103,6 +106,7 @@ export const TechnicianModal: React.FC<TechnicianModalProps> = ({
             emergencyContact: emergencyContact.trim() || null,
             status,
             skills,
+            portalEnabled,
           },
         });
       } else {
@@ -114,6 +118,7 @@ export const TechnicianModal: React.FC<TechnicianModalProps> = ({
           emergencyContact: emergencyContact.trim() || null,
           status,
           skills,
+          portalEnabled,
         });
       }
       onClose();
@@ -214,6 +219,30 @@ export const TechnicianModal: React.FC<TechnicianModalProps> = ({
                 <option value="INACTIVE">Inactive / Suspended</option>
               </select>
             </div>
+          </div>
+
+          {/* Portal Access Control */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+            <div>
+              <span className="block text-xs font-semibold text-slate-800 uppercase tracking-wider">
+                Technician Portal Access
+              </span>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Enable mobile login and digital job card access for this technician.
+              </p>
+            </div>
+            <select
+              value={portalEnabled ? 'ENABLED' : 'DISABLED'}
+              onChange={(e) => setPortalEnabled(e.target.value === 'ENABLED')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                portalEnabled
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : 'bg-white text-slate-700 border-slate-300'
+              }`}
+            >
+              <option value="DISABLED">DISABLED (Default)</option>
+              <option value="ENABLED">ENABLED</option>
+            </select>
           </div>
 
           {/* Address & Emergency Contact */}

@@ -53,6 +53,7 @@ export interface JobCardItem {
   technicianId: string | null;
   technicianName: string | null;
   technicianPhone: string | null;
+  technicianNotes?: string | null;
   warrantyId: string | null;
   warrantyStatus: string | null;
   warrantyEndDate: string | null;

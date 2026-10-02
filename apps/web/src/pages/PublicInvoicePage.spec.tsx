@@ -89,6 +89,6 @@ describe('PublicInvoicePage Component', () => {
     );
 
     expect(await screen.findByText('Invoice Not Found')).toBeDefined();
-    expect(await screen.findByText(/Call SR Enterprises/i)).toBeDefined();
+    expect(await screen.findByText(/Call Enterprises CRM/i)).toBeDefined();
   });
 });

@@ -286,7 +286,7 @@ export const CustomerDetailsPanel: React.FC<CustomerDetailsPanelProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-slate-900 truncate">
-                      {asset.customName || asset.product?.name || asset.productName || asset.assetName || 'Water Purifier Asset'}
+                      {asset.customName || asset.product?.name || asset.productName || asset.assetName || 'Product Asset'}
                     </span>
                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/80 font-mono">
                       {asset.status || 'Active'}

@@ -47,7 +47,7 @@ export function formatWhatsAppDate(dateValue: string | Date | undefined): string
  */
 export function buildRentalWhatsAppMessage(rental: RentalItem, overridePhone?: string): string {
   const customerName = rental.customer?.fullName?.trim() || 'Valued Customer';
-  const machineModel = rental.machineModel?.trim() || 'RO Purifier';
+  const machineModel = rental.machineModel?.trim() || 'Product / Equipment';
   const rentalId = rental.rentalNumber?.trim() || 'Rental';
   const monthlyRentFormatted = formatINR(Number(rental.monthlyRent || 0));
   const dueDateFormatted = formatWhatsAppDate(rental.nextDueDate);
@@ -63,9 +63,9 @@ export function buildRentalWhatsAppMessage(rental: RentalItem, overridePhone?: s
   if (isOverdue) {
     return `Hello ${customerName},
 
-Your RO rental payment is currently overdue.
+Your rental payment is currently overdue.
 
-Machine: ${machineModel}
+Product: ${machineModel}
 Rental ID: ${rentalId}
 Rent Amount: ${monthlyRentFormatted}
 Due Date: ${dueDateFormatted}
@@ -75,16 +75,16 @@ Status: OVERDUE
 Kindly make the payment at the earliest.
 
 Thank you,
-SR ENTERPRISES`;
+Enterprises CRM`;
   }
 
   if (isPartiallyPaid) {
     return `Hello ${customerName},
 
-This is a rent payment reminder from SR ENTERPRISES.
+This is a rent payment reminder from Enterprises CRM.
 
 Rental Details:
-Machine: ${machineModel}
+Product: ${machineModel}
 Rental ID: ${rentalId}
 Monthly Rent: ${monthlyRentFormatted}
 Amount Paid: ${totalPaidFormatted}
@@ -95,7 +95,7 @@ Current Status: Partially Paid
 Kindly make the payment by the due date.
 
 Thank you,
-SR ENTERPRISES`;
+Enterprises CRM`;
   }
 
   // Standard upcoming / payment due reminder
@@ -105,10 +105,10 @@ SR ENTERPRISES`;
 
   return `Dear Customer,
 
-This is a reminder from SR ENTERPRISES regarding your upcoming RO rental payment.
+This is a reminder from Enterprises CRM regarding your upcoming rental payment.
 
 Rental Details:
-Machine: ${machineModel}
+Product: ${machineModel}
 Rental ID: ${rentalId}
 Rent Amount: ${monthlyRentFormatted}
 Next Due Date: ${dueDateFormatted}
@@ -118,7 +118,7 @@ Current Status: ${paymentStatusDisplay}
 Kindly make the payment by the due date.
 
 Thank you,
-SR ENTERPRISES`;
+Enterprises CRM`;
 }
 
 /**

@@ -40,6 +40,7 @@ const STATUS_VARIANT_MAP: Record<string, BadgeVariant> = {
   // Warning / In-Progress / Attention
   PENDING: 'warning',
   IN_PROGRESS: 'warning',
+  ON_HOLD: 'warning',
   PARTIALLY_PAID: 'warning',
   ISSUED: 'warning',
   ASSIGNED: 'warning',
@@ -59,6 +60,7 @@ const STATUS_VARIANT_MAP: Record<string, BadgeVariant> = {
 };
 
 const CUSTOM_STATUS_LABELS: Record<string, string> = {
+  ON_HOLD: 'On Hold',
   ISSUED: 'Not Paid',
   UNPAID: 'Not Paid',
   PARTIALLY_PAID: 'Partially Paid',

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Wrench,
   User,
@@ -11,7 +11,9 @@ import {
   Clock,
   AlertCircle,
   Cpu,
+  PauseCircle,
 } from 'lucide-react';
+import { HoldStatusModal, type HoldStatusData } from '../../../components/ui/HoldStatusModal';
 import type { JobCardItem } from '../job-cards.api';
 
 export interface JobCardTableProps {
@@ -31,7 +33,9 @@ export const JobCardTable: React.FC<JobCardTableProps> = ({
   onStartJob,
   onCompleteJob,
 }) => {
-  const getStatusBadge = (status: string) => {
+  const [selectedHoldJob, setSelectedHoldJob] = useState<HoldStatusData | null>(null);
+
+  const getStatusBadge = (status: string, jc?: JobCardItem) => {
     switch (status) {
       case 'SCHEDULED':
       case 'OPEN':
@@ -60,10 +64,27 @@ export const JobCardTable: React.FC<JobCardTableProps> = ({
         );
       case 'ON_HOLD':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
-            <AlertCircle className="w-3 h-3 text-orange-600" />
-            On Hold
-          </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedHoldJob({
+                serviceNumber: jc?.serviceNumber,
+                jobCardNumber: jc?.jobCardNumber,
+                technicianName: jc?.technicianName,
+                technicianPhone: jc?.technicianPhone,
+                customerName: jc?.customerName,
+                notes: jc?.technicianNotes || (jc as any)?.internalNotes || (jc as any)?.notes,
+                updatedAt: jc?.updatedAt,
+              });
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer shadow-xs group"
+            title="Click to view hold status note"
+          >
+            <PauseCircle className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform shrink-0" />
+            <span>On Hold</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+          </button>
         );
       case 'COMPLETED':
       case 'CUSTOMER_CONFIRMED':
@@ -227,7 +248,7 @@ export const JobCardTable: React.FC<JobCardTableProps> = ({
                   </td>
 
                   {/* Status */}
-                  <td className="py-3.5 px-4">{getStatusBadge(jc.status)}</td>
+                  <td className="py-3.5 px-4">{getStatusBadge(jc.status, jc)}</td>
 
                   {/* Scheduled Date */}
                   <td className="py-3.5 px-4 text-xs">
@@ -299,6 +320,12 @@ export const JobCardTable: React.FC<JobCardTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      <HoldStatusModal
+        isOpen={Boolean(selectedHoldJob)}
+        onClose={() => setSelectedHoldJob(null)}
+        data={selectedHoldJob}
+      />
     </div>
   );
 };

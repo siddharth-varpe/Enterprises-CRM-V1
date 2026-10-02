@@ -116,7 +116,7 @@ describe('Production DashboardPage Component', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('SR Enterprises')).toBeDefined();
+    expect(screen.getByText('Enterprises CRM')).toBeDefined();
     expect(screen.getByText("Here's what's happening with your business today.")).toBeDefined();
     expect(screen.getByPlaceholderText(/Search customers, invoices, services.../i)).toBeDefined();
     expect(screen.getByText(/Today,/i)).toBeDefined();

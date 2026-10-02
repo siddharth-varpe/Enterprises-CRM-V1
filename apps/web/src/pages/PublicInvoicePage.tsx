@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiClient } from '../lib/api-client';
 import { cn } from '../lib/utils';
-import { SR_ENTERPRISES_LOGO_B64, OFFICIAL_LOWER_SECTION_B64 } from '../assets/invoiceAssets';
+import { CRM_OFFICIAL_LOGO_B64, OFFICIAL_LOWER_SECTION_B64 } from '../assets/invoiceAssets';
 import {
   Printer,
   Phone,
@@ -128,7 +128,7 @@ export const PublicInvoicePage: React.FC = () => {
               href="tel:+917385059197"
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-colors"
             >
-              <Phone className="w-4 h-4" /> Call SR Enterprises (+91 7385059197)
+              <Phone className="w-4 h-4" /> Call Enterprises CRM (+91 7385059197)
             </a>
           </div>
         </div>
@@ -176,7 +176,7 @@ export const PublicInvoicePage: React.FC = () => {
                   {invoiceNo}
                 </span>
               </div>
-              <p className="text-xs text-slate-500">SR Enterprises • RO Water Purification Systems</p>
+              <p className="text-xs text-slate-500">Enterprises CRM • Commercial Invoice</p>
             </div>
           </div>
 
@@ -260,8 +260,8 @@ export const PublicInvoicePage: React.FC = () => {
             <div className="flex items-center mb-3 pb-2">
               <div className="w-20 shrink-0 flex items-center justify-center">
                 <img
-                  src={SR_ENTERPRISES_LOGO_B64}
-                  alt="SR Enterprises Logo"
+                  src={CRM_OFFICIAL_LOGO_B64}
+                  alt="Enterprises CRM Logo"
                   className="w-20 h-20 object-contain select-none"
                 />
               </div>
@@ -408,18 +408,18 @@ export const PublicInvoicePage: React.FC = () => {
                 <strong>Notes:</strong>{noteText ? <>&nbsp;{noteText}</> : null}
               </div>
 
-              {/* PART B: Official SR Enterprises Lower Section (Bank Details, Payment QR, Terms & Signatory) */}
+              {/* PART B: Official Enterprises CRM Lower Section (Bank Details, Payment QR, Terms & Signatory) */}
               <div className="w-full bg-white leading-none relative" data-testid="invoice-lower-section">
                 <img
                   src={OFFICIAL_LOWER_SECTION_B64}
-                  alt="Official SR Enterprises Bank, QR, Terms & Signatory"
+                  alt="Official Enterprises CRM Bank, QR, Terms & Signatory"
                   className="w-full h-auto block select-none"
                 />
                 <div className="sr-only">
-                  <div>Bank Details: Bank: AU Small Finance Bank, Name: S R Enterprises, A/c No: 2602245912923632, IFSC: AUBL0002459, Branch: Pimpri Pune</div>
-                  <div>Payment QR Code: Scan &amp; Pay (UPI), UPI ID: srenterprises6711@aubank</div>
-                  <div>Terms and Conditions: 1) Except Breakage &amp; Pump In AMC, 2) T&amp;C Apply For AMC &amp; Warranty, 3) Dust &amp; Soil Damage Not Cover, 4) Any Other Issue Service Charge Applicable, 5) GST Bill Extra Charges Applicable, 6) New Machine Install Advance Payment 80%, 7) Commercial Use Unit No Warranty</div>
-                  <div>Authorised Signatory For SR ENTERPRISES</div>
+                  <div>Bank Details: Bank: State Bank of India, Name: Enterprises CRM, A/c No: 30998877665, IFSC: SBIN0001234, Branch: Main Branch, Pune</div>
+                  <div>Payment QR Code: Scan &amp; Pay (UPI), UPI ID: enterprises.crm@upi</div>
+                  <div>Terms and Conditions: 1) Goods once sold will not be taken back or exchanged, 2) Warranty as per manufacturer terms &amp; conditions, 3) Service charges applicable for out-of-warranty services, 4) Subject to local jurisdiction, 5) Payment due immediately or as per agreed terms</div>
+                  <div>Authorised Signatory For ENTERPRISES CRM</div>
                 </div>
               </div>
             </div>
@@ -429,8 +429,8 @@ export const PublicInvoicePage: React.FC = () => {
 
         {/* Footer Support Info (Hidden on Print) */}
         <div className="text-center py-4 text-xs text-slate-500 print:hidden space-y-1">
-          <p>© {new Date().getFullYear()} SR Enterprises. All rights reserved.</p>
-          <p>For any queries, please call us at 7385059197 or email srenterprises02015@gmail.com</p>
+          <p>© {new Date().getFullYear()} Enterprises CRM. All rights reserved.</p>
+          <p>For any queries, please call us at 7385059197 or email support@example.com</p>
         </div>
       </div>
     </div>

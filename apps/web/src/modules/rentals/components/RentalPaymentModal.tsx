@@ -22,7 +22,7 @@ export const RentalPaymentModal: React.FC<RentalPaymentModalProps> = ({
   const toast = useToast();
   const recordPaymentMutation = useRecordRentalPaymentMutation(rental?.id || '');
 
-  const [amount, setAmount] = useState<number>(rental ? Number(rental.monthlyRent) : 500);
+  const [amount, setAmount] = useState<number>(rental ? Number(rental.monthlyRent || 0) : 0);
   const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState<string>('UPI');
   const [paymentType, setPaymentType] = useState<'MONTHLY_RENT' | 'SECURITY_DEPOSIT' | 'ADVANCE_RENT' | 'DAMAGE_CHARGE' | 'OTHER'>('MONTHLY_RENT');
@@ -33,7 +33,7 @@ export const RentalPaymentModal: React.FC<RentalPaymentModalProps> = ({
   // Update default amount if rental changes
   React.useEffect(() => {
     if (rental) {
-      setAmount(Number(rental.monthlyRent || 500));
+      setAmount(Number(rental.monthlyRent || 0));
     }
   }, [rental]);
 
@@ -163,7 +163,7 @@ export const RentalPaymentModal: React.FC<RentalPaymentModalProps> = ({
             <label className="block text-xs font-bold text-slate-700 mb-1">Transaction Ref # (optional)</label>
             <input
               type="text"
-              placeholder="e.g. UPI Ref / UTR #"
+              placeholder="e.g. UPI Ref / Bank UTR / Cheque No."
               value={referenceNumber}
               onChange={(e) => setReferenceNumber(e.target.value)}
               className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl outline-none font-mono"
@@ -176,7 +176,7 @@ export const RentalPaymentModal: React.FC<RentalPaymentModalProps> = ({
           <label className="block text-xs font-bold text-slate-700 mb-1">Notes / Remarks</label>
           <input
             type="text"
-            placeholder="e.g. Paid on time, receipt sent on WhatsApp"
+            placeholder="e.g. Payment remarks or transaction note"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl outline-none"

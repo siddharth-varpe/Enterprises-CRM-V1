@@ -162,7 +162,7 @@ export const RecordSaleModal: React.FC<RecordSaleModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-semibold text-gray-700">
-                Inventory Item / Spare Part <span className="text-red-500">*</span>
+                Inventory Item <span className="text-red-500">*</span>
               </label>
               {selectedItem && (
                 <span
@@ -185,7 +185,7 @@ export const RecordSaleModal: React.FC<RecordSaleModalProps> = ({
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white font-medium text-gray-900"
             >
               <option value="" disabled>
-                -- Choose Item / Spare Part --
+                -- Choose Inventory Item --
               </option>
               {items.map((it) => (
                 <option key={it.id} value={it.id} disabled={it.currentStock <= 0}>
@@ -335,7 +335,7 @@ export const RecordSaleModal: React.FC<RecordSaleModalProps> = ({
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Delivery notes, installation address, counter invoice ref..."
+              placeholder="e.g. Delivery notes, invoice ref, customer remarks..."
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
             />
           </div>

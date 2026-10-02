@@ -12,14 +12,14 @@ $subject = "Thank You for Choosing {$companyName}!";
 $plainText = "Hello {$customerDisplayName},
 
 Thank You!
-We want to extend our heartfelt appreciation for choosing SR Enterprises as your trusted water purification partner.
+We want to extend our heartfelt appreciation for choosing {$companyName} as your trusted partner.
 
-Our commitment is to ensure you and your family have access to 100% safe, pure, and mineral-balanced drinking water every single day.
+Our commitment is to ensure the highest standards of service, quality, and dedicated customer support every single day.
 
 Need Assistance?
 Helpline: {$supportPhone}
 Email: {$supportEmail}
-SR Enterprises — Reliable Solutions. Pure Performance.
+{$companyName} — Reliable Solutions. Professional Service.
 ";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -52,14 +52,14 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                                 <table border="0" cellpadding="0" cellspacing="0">
                                     <tr>
                                         <td style="width: 40px; height: 40px; background-color: #0B63F6; border-radius: 8px; text-align: center; vertical-align: middle; font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: bold; color: #FFFFFF;">
-                                            SR
+                                            CRM
                                         </td>
                                         <td style="padding-left: 12px; vertical-align: middle;">
                                             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 17px; font-weight: bold; color: #FFFFFF; letter-spacing: 0.5px; line-height: 1.2;">
-                                                SR ENTERPRISES
+                                                <?php echo htmlspecialchars($companyName); ?>
                                             </div>
                                             <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #93C5FD; margin-top: 2px;">
-                                                Reliable Solutions. Pure Performance.
+                                                Reliable Solutions. Professional Service.
                                             </div>
                                         </td>
                                     </tr>
@@ -86,7 +86,7 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                         Hello <?php echo htmlspecialchars($customerDisplayName); ?>,
                     </div>
                     <div style="font-size: 13px; color: #475569; line-height: 1.6; margin-bottom: 20px;">
-                        We want to extend our heartfelt appreciation for choosing <strong><?php echo htmlspecialchars($companyName); ?></strong> as your trusted water purification partner.
+                        We want to extend our heartfelt appreciation for choosing <strong><?php echo htmlspecialchars($companyName); ?></strong> as your trusted partner.
                     </div>
 
                     <!-- COMMITMENT CARD -->
@@ -99,14 +99,14 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                                 </div>
                                 <?php endif; ?>
                                 <div style="font-size: 12px; color: #1E3A8A; line-height: 1.6;">
-                                    Our commitment is to ensure you and your family have access to 100% safe, mineral-balanced, and crystal-clear drinking water every single day.
+                                    Our commitment is to ensure the highest standards of service, quality, and dedicated customer support every single day.
                                 </div>
                             </td>
                         </tr>
                     </table>
 
                     <div style="font-size: 13px; color: #475569; line-height: 1.6;">
-                        Our service team is always here for periodic maintenance, genuine filter replacements, and technical support whenever you need us.
+                        Our service team is always here for periodic maintenance, genuine replacements, and technical support whenever you need us.
                     </div>
                 </td>
             </tr>
@@ -122,13 +122,13 @@ SR Enterprises — Reliable Solutions. Pure Performance.
                                 </div>
                                 <div>Helpline: <strong style="color: #E2E8F0;"><?php echo htmlspecialchars($supportPhone); ?></strong></div>
                                 <div>Email: <strong style="color: #E2E8F0;"><?php echo htmlspecialchars($supportEmail); ?></strong></div>
-                                <div>Address: <span style="color: #CBD5E1;">SR Enterprises — Water Purifier Sales &amp; Services</span></div>
+                                <div>Address: <span style="color: #CBD5E1;"><?php echo htmlspecialchars($companyName); ?> — Commercial Services</span></div>
                                 <div style="margin-top: 8px; color: #64748B;">
-                                    SR Enterprises • Reliable Solutions. Pure Performance.
+                                    <?php echo htmlspecialchars($companyName); ?> • Reliable Solutions. Professional Service.
                                 </div>
                             </td>
                             <td align="right" valign="bottom" style="text-align: right; color: #64748B; font-size: 10px;">
-                                © <?php echo date('Y'); ?> SR Enterprises.<br />All rights reserved.
+                                © <?php echo date('Y'); ?> <?php echo htmlspecialchars($companyName); ?>.<br />All rights reserved.
                             </td>
                         </tr>
                     </table>

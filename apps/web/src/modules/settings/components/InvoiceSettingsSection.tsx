@@ -165,7 +165,7 @@ export const InvoiceSettingsSection: React.FC = () => {
               value={form.defaultNotes}
               onChange={(e) => handleChange('defaultNotes', e.target.value)}
               className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-medium text-slate-900"
-              placeholder="e.g. Thank you for choosing SR Enterprises for your water purification needs."
+              placeholder="e.g. Thank you for choosing Enterprises CRM for your business needs."
             />
             <p className="text-[11px] text-slate-500 mt-1">Automatically pre-fills the notes field when creating new invoices.</p>
           </div>

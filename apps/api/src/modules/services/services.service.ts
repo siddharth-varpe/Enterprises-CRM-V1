@@ -50,6 +50,22 @@ export class ServicesService {
         },
         createdById
       );
+
+      if (result.service.technicianId) {
+        domainEventBus.publish(
+          'SERVICE_ASSIGNED',
+          'SERVICE',
+          result.service.id,
+          {
+            serviceNumber: result.service.serviceNumber,
+            technicianId: result.service.technicianId,
+            scheduledDate: result.service.scheduledDate,
+            scheduledTimeSlot: result.service.scheduledTimeSlot,
+            priority: result.service.priority,
+          },
+          createdById
+        );
+      }
     } catch (e) {
       console.error('Failed to emit SERVICE_SCHEDULED event:', e);
     }
@@ -57,11 +73,155 @@ export class ServicesService {
   }
 
   async updateService(id: string, input: UpdateServiceInput, actorId?: string) {
-    return servicesRepository.updateService(id, input, actorId);
+    let existing: any = null;
+    try {
+      existing = await servicesRepository.findById(id);
+    } catch {}
+
+    const result = await servicesRepository.updateService(id, input, actorId);
+
+    try {
+      const { domainEventBus } = await import('../notifications/events/event-bus');
+      const updatedTechId = result?.technicianId;
+      const existingTechId = existing?.technicianId;
+
+      // 1. Reassignment or Assignment change
+      if (existingTechId !== updatedTechId) {
+        if (existingTechId && updatedTechId) {
+          // Reassigned from existingTechId to updatedTechId
+          domainEventBus.publish(
+            'SERVICE_REASSIGNED',
+            'SERVICE',
+            id,
+            {
+              serviceNumber: result?.serviceNumber || existing?.serviceNumber,
+              oldTechnicianId: existingTechId,
+              newTechnicianId: updatedTechId,
+              scheduledDate: result?.scheduledDate,
+              scheduledTimeSlot: result?.scheduledTimeSlot,
+              priority: result?.priority,
+            },
+            actorId
+          );
+        } else if (!existingTechId && updatedTechId) {
+          // Freshly assigned to updatedTechId
+          domainEventBus.publish(
+            'SERVICE_ASSIGNED',
+            'SERVICE',
+            id,
+            {
+              serviceNumber: result?.serviceNumber || existing?.serviceNumber,
+              technicianId: updatedTechId,
+              scheduledDate: result?.scheduledDate,
+              scheduledTimeSlot: result?.scheduledTimeSlot,
+              priority: result?.priority,
+            },
+            actorId
+          );
+        } else if (existingTechId && !updatedTechId) {
+          // Unassigned from existingTechId
+          domainEventBus.publish(
+            'SERVICE_REASSIGNED',
+            'SERVICE',
+            id,
+            {
+              serviceNumber: result?.serviceNumber || existing?.serviceNumber,
+              oldTechnicianId: existingTechId,
+              newTechnicianId: null,
+            },
+            actorId
+          );
+        }
+      } else if (updatedTechId) {
+        // Same technician assigned, check other operational updates
+        const dateChanged =
+          input.scheduledDate &&
+          existing?.scheduledDate &&
+          new Date(input.scheduledDate).getTime() !== new Date(existing.scheduledDate).getTime();
+        const slotChanged =
+          input.scheduledTimeSlot !== undefined &&
+          input.scheduledTimeSlot !== existing?.scheduledTimeSlot;
+
+        if (dateChanged || slotChanged) {
+          domainEventBus.publish(
+            'SERVICE_SCHEDULE_CHANGED',
+            'SERVICE',
+            id,
+            {
+              serviceNumber: result?.serviceNumber || existing?.serviceNumber,
+              technicianId: updatedTechId,
+              scheduledDate: result?.scheduledDate,
+              scheduledTimeSlot: result?.scheduledTimeSlot,
+              reason: input.internalNotes || input.customerNotes,
+            },
+            actorId
+          );
+        }
+
+        if (input.status === 'CANCELLED' || input.cancelReason) {
+          domainEventBus.publish(
+            'SERVICE_CANCELLED',
+            'SERVICE',
+            id,
+            {
+              serviceNumber: result?.serviceNumber || existing?.serviceNumber,
+              technicianId: updatedTechId,
+              cancelReason: input.cancelReason || 'Cancelled by staff',
+            },
+            actorId
+          );
+        } else if (
+          input.diagnosis ||
+          input.workPerformed ||
+          input.technicianNotes ||
+          input.customerNotes ||
+          (input.status && input.status !== existing?.status)
+        ) {
+          domainEventBus.publish(
+            'JOB_CARD_UPDATED',
+            'SERVICE',
+            id,
+            {
+              serviceNumber: result?.serviceNumber || existing?.serviceNumber,
+              technicianId: updatedTechId,
+              summary:
+                input.workPerformed ||
+                input.diagnosis ||
+                input.customerNotes ||
+                (input.status ? `Status changed to ${input.status}` : undefined),
+            },
+            actorId
+          );
+        }
+      }
+    } catch (e) {
+      console.error('Failed to emit service update domain events:', e);
+    }
+
+    return result;
   }
 
   async cancelService(id: string, cancelReason: string, actorId?: string) {
-    return servicesRepository.cancelService(id, cancelReason, actorId);
+    const result = await servicesRepository.cancelService(id, cancelReason, actorId);
+    try {
+      if (result?.technicianId) {
+        const { domainEventBus } = await import('../notifications/events/event-bus');
+        domainEventBus.publish(
+          'SERVICE_CANCELLED',
+          'SERVICE',
+          id,
+          {
+            serviceNumber: result.serviceNumber,
+            technicianId: result.technicianId,
+            cancelReason,
+          },
+          actorId
+        );
+      }
+    } catch (e) {
+      console.error('Failed to emit SERVICE_CANCELLED event:', e);
+    }
+    return result;
   }
 
   async deleteService(id: string, actorId?: string) {

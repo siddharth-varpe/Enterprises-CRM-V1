@@ -20,7 +20,7 @@ import { useAuth } from '../../providers/AuthBoundary';
 import { useUIStore } from '../../stores/ui-store';
 import { Tooltip } from '../ui/Tooltip';
 import { cn } from '../../lib/utils';
-import { SR_ENTERPRISES_LOGO_B64 } from '../../assets/invoiceAssets';
+import { CRM_OFFICIAL_LOGO_B64 } from '../../assets/invoiceAssets';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard,
@@ -127,8 +127,8 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({
         {/* Centered Brand Logo */}
         <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-xs flex items-center justify-center p-1 shadow-md mb-1.5 shrink-0 border border-white/20">
           <img
-            src={SR_ENTERPRISES_LOGO_B64}
-            alt="SR Enterprises Logo"
+            src={CRM_OFFICIAL_LOGO_B64}
+            alt="Enterprises CRM Logo"
             className="w-full h-full object-contain select-none drop-shadow"
           />
         </div>
@@ -137,7 +137,7 @@ export const GlobalSidebar: React.FC<GlobalSidebarProps> = ({
         {isExpandedView ? (
           <div className="text-center px-1 animate-in fade-in duration-150 overflow-hidden w-full">
             <span className="block text-[10px] font-display font-extrabold tracking-wider text-white uppercase truncate">
-              SR ENTERPRISES
+              ENTERPRISES
             </span>
             <span className="block text-[9px] font-bold text-sky-400 tracking-widest uppercase mt-0.5 font-mono">
               CRM

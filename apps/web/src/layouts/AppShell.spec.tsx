@@ -45,9 +45,9 @@ describe('Phase 3 — UI Design System: AppShell Layout with Master GlobalSideba
       </QueryClientProvider>
     );
 
-  it('renders SR Enterprises branding, user profile, and child content', () => {
+  it('renders Enterprises CRM branding, user profile, and child content', () => {
     renderShell();
-    expect(screen.getByText('SR ENTERPRISES CRM')).toBeInTheDocument();
+    expect(screen.getByText('ENTERPRISES CRM')).toBeInTheDocument();
     expect(screen.getByTestId('shell-child')).toHaveTextContent('Foundation Content');
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     expect(screen.getByText(/Developed by/i)).toHaveTextContent('Developed by Kartik & Siddharth');
@@ -95,5 +95,16 @@ describe('Phase 3 — UI Design System: AppShell Layout with Master GlobalSideba
     await userEvent.click(workspaceChild);
 
     expect(useUIStore.getState().sidebarState).toBe('collapsed');
+  });
+
+  it('renders a Technician Login button in the top right header and navigates to /technician/login', async () => {
+    const handleNavigate = vi.fn();
+    renderShell(handleNavigate);
+
+    const techLoginBtn = screen.getByRole('button', { name: /technician login/i });
+    expect(techLoginBtn).toBeInTheDocument();
+
+    await userEvent.click(techLoginBtn);
+    expect(handleNavigate).toHaveBeenCalledWith('/technician/login');
   });
 });

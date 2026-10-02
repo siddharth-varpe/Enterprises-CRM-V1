@@ -24,7 +24,7 @@ interface Message {
 }
 
 const QUICK_QUESTIONS = [
-  'What is our RO service warranty period?',
+  'What is our standard service warranty period?',
   'What are the standard service charges?',
   'What is the customer support contact number?',
   'How do AMC plans work?',
@@ -38,7 +38,7 @@ export const ChatbotWidget: React.FC = () => {
     {
       id: 'welcome',
       sender: 'assistant',
-      text: 'Hello! I am the SR Enterprises CRM Assistant. Ask me anything about our services, warranty, products, or company policies.',
+      text: 'Hello! I am the Enterprises CRM Assistant. Ask me anything about our services, warranty, products, or company policies.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -114,7 +114,7 @@ export const ChatbotWidget: React.FC = () => {
       {
         id: 'welcome',
         sender: 'assistant',
-        text: 'Chat cleared. How can I help you with SR Enterprises services or policies today?',
+        text: 'Chat cleared. How can I help you with Enterprises CRM services or policies today?',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -128,7 +128,7 @@ export const ChatbotWidget: React.FC = () => {
           id="chatbot-trigger-btn"
           onClick={() => setIsOpen(true)}
           className="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-300"
-          aria-label="Open SR Enterprises CRM Chatbot"
+          aria-label="Open Enterprises CRM Chatbot"
         >
           <Bot className="w-7 h-7 transition-transform group-hover:scale-110" />
           <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
@@ -152,7 +152,7 @@ export const ChatbotWidget: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-sm font-semibold font-display tracking-tight text-white flex items-center gap-1.5">
-                  SR Enterprises Assistant
+                  Enterprises Assistant
                 </h3>
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>

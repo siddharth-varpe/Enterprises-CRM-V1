@@ -44,7 +44,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         {/* Left: Greeting & Operational Subtitle */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-sans font-extrabold text-slate-900 tracking-tight leading-tight animate-subtle-fade-up">
-            SR Enterprises
+            Enterprises CRM
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
             Here's what's happening with your business today.

@@ -14,6 +14,7 @@ import { LoadingState } from './components/ui/LoadingState';
 import { Button } from './components/ui/Button';
 import { LoginPage } from './pages/LoginPage';
 import { notifyCrmReady, updateSplashProgress } from './lib/splashScreen';
+import { PwaCoordinator } from './lib/pwa-coordinator';
 
 // Code-split route modules dynamically to optimize initial bundle size and processing speed
 const DashboardPage = React.lazy(() => import('./modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })));
@@ -31,6 +32,7 @@ const ServiceDetailPage = React.lazy(() => import('./modules/services/ServiceDet
 const JobCardDirectory = React.lazy(() => import('./modules/job-cards/JobCardDirectory').then((m) => ({ default: m.JobCardDirectory })));
 const JobCardDetailPage = React.lazy(() => import('./modules/job-cards/JobCardDetailPage').then((m) => ({ default: m.JobCardDetailPage })));
 const TechniciansDirectory = React.lazy(() => import('./modules/technicians/TechniciansDirectory').then((m) => ({ default: m.TechniciansDirectory })));
+const TechnicianProfilePage = React.lazy(() => import('./modules/technicians/TechnicianProfilePage').then((m) => ({ default: m.TechnicianProfilePage })));
 const PaymentsDirectory = React.lazy(() => import('./modules/payments/PaymentsDirectory').then((m) => ({ default: m.PaymentsDirectory })));
 const RemindersDirectory = React.lazy(() => import('./modules/reminders/RemindersDirectory').then((m) => ({ default: m.RemindersDirectory })));
 const WhatsAppHub = React.lazy(() => import('./modules/whatsapp/WhatsAppHub').then((m) => ({ default: m.WhatsAppHub })));
@@ -40,6 +42,7 @@ const SettingsPage = React.lazy(() => import('./modules/settings/SettingsPage').
 const DuesPage = React.lazy(() => import('./modules/dues/DuesPage').then((m) => ({ default: m.DuesPage })));
 const InventoryPage = React.lazy(() => import('./modules/inventory/InventoryPage').then((m) => ({ default: m.InventoryPage })));
 const PublicInvoicePage = React.lazy(() => import('./pages/PublicInvoicePage').then((m) => ({ default: m.PublicInvoicePage })));
+const TechnicianPortalRouter = React.lazy(() => import('./modules/technician-portal').then((m) => ({ default: m.TechnicianPortalRouter })));
 import {
   TrendingUp,
   Plus,
@@ -367,6 +370,22 @@ function MainAppShellRouter() {
               </PermissionGuard>
             }
           />
+          <Route
+            path="/technicians/map"
+            element={
+              <PermissionGuard permission="services.view" moduleName="Live Technician Map">
+                <TechniciansDirectory />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="/technicians/:id"
+            element={
+              <PermissionGuard permission="services.view" moduleName="Technician Profile">
+                <TechnicianProfilePage />
+              </PermissionGuard>
+            }
+          />
           {/* Notifications Center (Phase 10 Live) */}
           <Route
             path="/notifications"
@@ -412,6 +431,14 @@ function AppRoutes() {
           </Suspense>
         }
       />
+      <Route
+        path="/technician/*"
+        element={
+          <Suspense fallback={<LoadingState message="Loading Technician Portal..." />}>
+            <TechnicianPortalRouter />
+          </Suspense>
+        }
+      />
       <Route path="/*" element={<MainAppShellRouter />} />
     </Routes>
   );
@@ -441,7 +468,9 @@ export function App() {
             <SplashScreenCoordinator />
             <ErrorBoundary>
               <BrowserRouter>
-                <AppRoutes />
+                <PwaCoordinator>
+                  <AppRoutes />
+                </PwaCoordinator>
               </BrowserRouter>
             </ErrorBoundary>
           </AuthProvider>

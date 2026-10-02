@@ -3,7 +3,7 @@ import { Button } from '../../../components/ui/Button';
 import { useInvoiceQuery } from '../../invoices/invoices.api';
 import { formatDate } from '../../../lib/formatters';
 import type { PaymentItem } from '../payments.api';
-import { OFFICIAL_LOWER_SECTION_B64, SR_ENTERPRISES_LOGO_B64 } from '../../../assets/invoiceAssets';
+import { OFFICIAL_LOWER_SECTION_B64, CRM_OFFICIAL_LOGO_B64 } from '../../../assets/invoiceAssets';
 import { X, Printer } from 'lucide-react';
 
 interface PaymentReceiptModalProps {
@@ -114,15 +114,15 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
             <div className="flex items-center justify-between mb-3 pb-2">
               <div className="w-16 shrink-0 flex items-center justify-center">
                 <img
-                  src={SR_ENTERPRISES_LOGO_B64}
-                  alt="SR Enterprises Logo"
+                  src={CRM_OFFICIAL_LOGO_B64}
+                  alt="Enterprises CRM Logo"
                   className="w-14 h-14 object-contain select-none"
                 />
               </div>
 
               <div className="text-center flex-1 px-2">
                 <h1 className="text-xl font-extrabold tracking-wide uppercase text-black font-sans">
-                  SR ENTERPRISES
+                  ENTERPRISES CRM
                 </h1>
                 <p className="text-[10px] text-slate-800 font-medium mt-0.5">
                   Shop A6 SaiPritam Nagari, Chatrapati Chowk Rahatani. Mo.7385059197, Pimpri-Chinchwad, Pune., Maharashtra, 411017
@@ -239,11 +239,11 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
                 <strong>Notes:</strong>&nbsp;{warrantyNotes}
               </div>
 
-              {/* PART B: Static Official SR Enterprises Lower Section Image */}
+              {/* PART B: Static Official Enterprises CRM Lower Section Image */}
               <div className="w-full bg-white leading-none">
                 <img
                   src={OFFICIAL_LOWER_SECTION_B64}
-                  alt="Official SR Enterprises Bank, QR, Terms & Signatory"
+                  alt="Official Enterprises CRM Bank, QR, Terms & Signatory"
                   className="w-full h-auto block select-none"
                 />
               </div>

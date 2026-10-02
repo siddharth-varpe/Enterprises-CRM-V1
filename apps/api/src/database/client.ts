@@ -886,6 +886,93 @@ export async function ensureChatbotTables(targetPg: PGlite | postgres.Sql): Prom
 }
 
 /**
+ * Ensures additive Technician Portal tables, columns, and indexes exist
+ */
+export async function ensureTechnicianPortalTables(targetPg: PGlite | postgres.Sql): Promise<void> {
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS "technician_portal_access" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+      "technician_id" uuid NOT NULL,
+      "portal_enabled" boolean DEFAULT false NOT NULL,
+      "last_login_at" timestamp with time zone,
+      "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+      "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+      CONSTRAINT "technician_portal_access_technician_id_unique" UNIQUE("technician_id")
+    );`,
+    `CREATE INDEX IF NOT EXISTS "tech_portal_access_tech_idx" ON "technician_portal_access" USING btree ("technician_id");`,
+    `CREATE INDEX IF NOT EXISTS "tech_portal_access_enabled_idx" ON "technician_portal_access" USING btree ("portal_enabled");`,
+    `CREATE TABLE IF NOT EXISTS "technician_portal_notifications" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+      "technician_id" uuid NOT NULL,
+      "type" text NOT NULL,
+      "title" text NOT NULL,
+      "message" text NOT NULL,
+      "reference_type" text,
+      "reference_id" text,
+      "dedup_key" text,
+      "is_read" boolean DEFAULT false NOT NULL,
+      "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+      "read_at" timestamp with time zone
+    );`,
+    `ALTER TABLE "technician_portal_notifications" ADD COLUMN IF NOT EXISTS "dedup_key" text;`,
+    `CREATE INDEX IF NOT EXISTS "tech_portal_notifications_tech_idx" ON "technician_portal_notifications" USING btree ("technician_id");`,
+    `CREATE INDEX IF NOT EXISTS "tech_portal_notifications_unread_idx" ON "technician_portal_notifications" USING btree ("technician_id","is_read");`,
+    `CREATE INDEX IF NOT EXISTS "tech_portal_notifications_dedup_idx" ON "technician_portal_notifications" USING btree ("technician_id","dedup_key");`,
+    `CREATE TABLE IF NOT EXISTS "technician_otp_challenges" (
+      "challenge_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+      "technician_id" uuid NOT NULL,
+      "otp_hash" text NOT NULL,
+      "expires_at" timestamp with time zone NOT NULL,
+      "attempt_count" integer DEFAULT 0 NOT NULL,
+      "max_attempts" integer DEFAULT 3 NOT NULL,
+      "used_at" timestamp with time zone,
+      "created_at" timestamp with time zone DEFAULT now() NOT NULL
+    );`,
+    `CREATE INDEX IF NOT EXISTS "tech_otp_challenges_tech_exp_idx" ON "technician_otp_challenges" USING btree ("technician_id","expires_at");`,
+    `ALTER TYPE "service_status" ADD VALUE 'ON_HOLD';`,
+  ];
+
+  if ('exec' in targetPg) {
+    for (const stmt of statements) {
+      try {
+        await targetPg.exec(stmt);
+      } catch {}
+    }
+  } else {
+    for (const stmt of statements) {
+      try {
+        await targetPg.unsafe(stmt);
+      } catch {}
+    }
+  }
+}
+
+/**
+ * Ensures latitude and longitude coordinate columns exist on customer_addresses table
+ */
+export async function ensureCustomerAddressCoordinates(targetPg: PGlite | postgres.Sql): Promise<void> {
+  const statements = [
+    `ALTER TABLE "customer_addresses" ADD COLUMN IF NOT EXISTS "latitude" double precision;`,
+    `ALTER TABLE "customer_addresses" ADD COLUMN IF NOT EXISTS "longitude" double precision;`,
+  ];
+
+  if ('exec' in targetPg) {
+    for (const stmt of statements) {
+      try {
+        await targetPg.exec(stmt);
+      } catch {}
+    }
+  } else {
+    for (const stmt of statements) {
+      try {
+        await targetPg.unsafe(stmt);
+      } catch {}
+    }
+  }
+}
+
+
+/**
  * Ensures migrations and initial database initialization is executed once on server startup
  */
 export async function ensureDatabaseInitialized(): Promise<void> {
@@ -944,6 +1031,8 @@ export async function ensureDatabaseInitialized(): Promise<void> {
         await ensureWhatsAppTables(pgClient);
         await ensureInquiryColumns(pgClient);
         await ensureChatbotTables(pgClient);
+        await ensureTechnicianPortalTables(pgClient);
+        await ensureCustomerAddressCoordinates(pgClient);
       } else if (pgliteClient) {
         try {
           await pgliteClient.waitReady;
@@ -976,6 +1065,8 @@ export async function ensureDatabaseInitialized(): Promise<void> {
         await ensureWhatsAppTables(pgliteClient);
         await ensureInquiryColumns(pgliteClient);
         await ensureChatbotTables(pgliteClient);
+        await ensureTechnicianPortalTables(pgliteClient);
+        await ensureCustomerAddressCoordinates(pgliteClient);
       }
 
       isInitialized = true;

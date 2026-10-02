@@ -14,7 +14,7 @@ import { useAuth } from '../../providers/AuthBoundary';
 import { formatINR, formatDate } from '../../lib/formatters';
 import { cn } from '../../lib/utils';
 import { sendInvoiceViaWhatsApp } from '../../lib/whatsapp';
-import { OFFICIAL_LOWER_SECTION_B64, SR_ENTERPRISES_LOGO_B64 } from '../../assets/invoiceAssets';
+import { OFFICIAL_LOWER_SECTION_B64, CRM_OFFICIAL_LOGO_B64 } from '../../assets/invoiceAssets';
 import {
   Printer,
   ArrowLeft,
@@ -343,8 +343,8 @@ export const InvoiceDetailPage: React.FC = () => {
               <div className="flex items-center mb-3 pb-2">
                 <div className="w-20 shrink-0 flex items-center justify-center">
                   <img
-                    src={SR_ENTERPRISES_LOGO_B64}
-                    alt="SR Enterprises Logo"
+                    src={CRM_OFFICIAL_LOGO_B64}
+                    alt="Enterprises CRM Logo"
                     className="w-20 h-20 object-contain select-none"
                   />
                 </div>
@@ -492,18 +492,18 @@ export const InvoiceDetailPage: React.FC = () => {
                   <strong>Notes:</strong>{noteText ? <>&nbsp;{noteText}</> : null}
                 </div>
 
-                {/* PART B: Official SR Enterprises Lower Section (Bank Details, Payment QR, Terms & Signatory) */}
+                {/* PART B: Official Enterprises CRM Lower Section (Bank Details, Payment QR, Terms & Signatory) */}
                 <div className="w-full bg-white leading-none relative" data-testid="invoice-lower-section">
                   <img
                     src={OFFICIAL_LOWER_SECTION_B64}
-                    alt="Official SR Enterprises Bank, QR, Terms & Signatory"
+                    alt="Official Enterprises CRM Bank, QR, Terms & Signatory"
                     className="w-full h-auto block select-none"
                   />
                   <div className="sr-only">
-                    <div>Bank Details: Bank: AU Small Finance Bank, Name: S R Enterprises, A/c No: 2602245912923632, IFSC: AUBL0002459, Branch: Pimpri Pune</div>
-                    <div>Payment QR Code: Scan &amp; Pay (UPI), UPI ID: srenterprises6711@aubank</div>
-                    <div>Terms and Conditions: 1) Except Breakage &amp; Pump In AMC, 2) T&amp;C Apply For AMC &amp; Warranty, 3) Dust &amp; Soil Damage Not Cover, 4) Any Other Issue Service Charge Applicable, 5) GST Bill Extra Charges Applicable, 6) New Machine Install Advance Payment 80%, 7) Commercial Use Unit No Warranty</div>
-                    <div>Authorised Signatory For SR ENTERPRISES</div>
+                    <div>Bank Details: Bank: State Bank of India, Name: Enterprises CRM, A/c No: 30998877665, IFSC: SBIN0001234, Branch: Main Branch, Pune</div>
+                    <div>Payment QR Code: Scan &amp; Pay (UPI), UPI ID: enterprises.crm@upi</div>
+                    <div>Terms and Conditions: 1) Goods once sold will not be taken back or exchanged, 2) Warranty as per manufacturer terms &amp; conditions, 3) Service charges applicable for out-of-warranty services, 4) Subject to local jurisdiction, 5) Payment due immediately or as per agreed terms</div>
+                    <div>Authorised Signatory For ENTERPRISES CRM</div>
                   </div>
                 </div>
               </div>

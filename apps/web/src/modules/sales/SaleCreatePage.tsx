@@ -80,18 +80,18 @@ export const SaleCreatePage: React.FC = () => {
   // Draft product state for manual entry
   const [draftSpecifier, setDraftSpecifier] = useState<ProductSpecifier>('RO_MACHINE');
   const [draftName, setDraftName] = useState('');
-  const [draftBrand, setDraftBrand] = useState('Kent');
+  const [draftBrand, setDraftBrand] = useState('');
   const [draftModel, setDraftModel] = useState('');
   const [draftSku, setDraftSku] = useState('');
-  const [draftPurificationCapacity, setDraftPurificationCapacity] = useState('15 LPH');
-  const [draftStorageCapacity, setDraftStorageCapacity] = useState('8 Litres');
-  const [draftTechnology, setDraftTechnology] = useState('RO + UV + UF + TDS Controller');
+  const [draftPurificationCapacity, setDraftPurificationCapacity] = useState('');
+  const [draftStorageCapacity, setDraftStorageCapacity] = useState('');
+  const [draftTechnology, setDraftTechnology] = useState('');
   const [draftSerialNumber, setDraftSerialNumber] = useState('');
   const [draftNextServiceDate, setDraftNextServiceDate] = useState('');
-  const [draftPartCategory, setDraftPartCategory] = useState('Filter Cartridge');
-  const [draftHsnCode, setDraftHsnCode] = useState('84212190');
+  const [draftPartCategory, setDraftPartCategory] = useState('General Component');
+  const [draftHsnCode, setDraftHsnCode] = useState('');
   const [draftQuantity, setDraftQuantity] = useState<number>(1);
-  const [draftUnitPrice, setDraftUnitPrice] = useState<string>('16500');
+  const [draftUnitPrice, setDraftUnitPrice] = useState<string>('');
   const [draftDiscountAmount, setDraftDiscountAmount] = useState<string>('0');
   const [draftTaxRatePercent, setDraftTaxRatePercent] = useState<number>(0);
   const [draftWarrantyPreset, setDraftWarrantyPreset] = useState<'1M' | '3M' | '6M' | '1Y' | '2Y' | 'CUSTOM' | 'NO_WARRANTY'>('1Y');
@@ -175,24 +175,24 @@ export const SaleCreatePage: React.FC = () => {
     setDraftSpecifier(spec);
     if (spec === 'RO_MACHINE') {
       setDraftName('');
-      setDraftBrand('Kent');
-      setDraftModel('Grand Plus');
-      setDraftHsnCode('84212190');
-      setDraftUnitPrice('16500');
+      setDraftBrand('');
+      setDraftModel('');
+      setDraftHsnCode('');
+      setDraftUnitPrice('');
       setDraftWarrantyPreset('1Y');
       setDraftCustomWarrantyMonths(12);
-      setDraftPurificationCapacity('15 LPH');
-      setDraftStorageCapacity('8 Litres');
-      setDraftTechnology('RO + UV + UF + TDS Controller');
+      setDraftPurificationCapacity('');
+      setDraftStorageCapacity('');
+      setDraftTechnology('');
     } else {
       setDraftName('');
-      setDraftBrand('Kemflo');
+      setDraftBrand('');
       setDraftModel('');
-      setDraftHsnCode('84219900');
-      setDraftUnitPrice('450');
+      setDraftHsnCode('');
+      setDraftUnitPrice('');
       setDraftWarrantyPreset('3M');
       setDraftCustomWarrantyMonths(3);
-      setDraftPartCategory('Filter Cartridge');
+      setDraftPartCategory('General Component');
     }
   };
 
@@ -200,7 +200,7 @@ export const SaleCreatePage: React.FC = () => {
   const handleAddDraftItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (!draftName.trim()) {
-      toast.error('Please enter the Product / Machine Name.', 'Product Name Required');
+      toast.error('Please enter the Product / Item Name.', 'Product Name Required');
       return;
     }
 
@@ -223,9 +223,9 @@ export const SaleCreatePage: React.FC = () => {
     else if (draftWarrantyPreset === '2Y') warrantyMonths = 24;
     else warrantyMonths = Math.max(0, draftCustomWarrantyMonths || 0);
 
-    const generatedSku = draftSku.trim() || `${draftSpecifier === 'RO_MACHINE' ? 'RO' : 'SPARE'}-${(draftBrand || 'SR').slice(0, 4).toUpperCase()}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+    const generatedSku = draftSku.trim() || `${draftSpecifier === 'RO_MACHINE' ? 'PROD' : 'SPARE'}-${(draftBrand || 'GEN').slice(0, 4).toUpperCase()}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
     const generatedSerial = draftSpecifier === 'RO_MACHINE'
-      ? (draftSerialNumber.trim() || `SN-RO-${Date.now().toString().slice(-6)}`)
+      ? (draftSerialNumber.trim() || `SN-${Date.now().toString().slice(-6)}`)
       : (draftSerialNumber.trim() || undefined);
 
     const newItem: FormLineItem = {
@@ -233,13 +233,13 @@ export const SaleCreatePage: React.FC = () => {
       productName: draftName.trim(),
       sku: generatedSku,
       productType: draftSpecifier,
-      brand: draftBrand.trim() || 'SR Enterprises',
+      brand: draftBrand.trim() || 'Standard',
       model: draftModel.trim() || undefined,
-      purificationCapacity: draftSpecifier === 'RO_MACHINE' ? draftPurificationCapacity : undefined,
-      storageCapacity: draftSpecifier === 'RO_MACHINE' ? draftStorageCapacity : undefined,
-      technology: draftSpecifier === 'RO_MACHINE' ? draftTechnology : undefined,
+      purificationCapacity: draftSpecifier === 'RO_MACHINE' && draftPurificationCapacity.trim() ? draftPurificationCapacity.trim() : undefined,
+      storageCapacity: draftSpecifier === 'RO_MACHINE' && draftStorageCapacity.trim() ? draftStorageCapacity.trim() : undefined,
+      technology: draftSpecifier === 'RO_MACHINE' && draftTechnology.trim() ? draftTechnology.trim() : undefined,
       partCategory: draftSpecifier === 'SPARE_PART' ? draftPartCategory : undefined,
-      hsnCode: draftHsnCode.trim() || (draftSpecifier === 'RO_MACHINE' ? '84212190' : '84219900'),
+      hsnCode: draftHsnCode.trim() || undefined,
       quantity: qty,
       unitPrice: price,
       discountAmount: discount,
@@ -253,11 +253,18 @@ export const SaleCreatePage: React.FC = () => {
     setItems((prev) => [...prev, newItem]);
     toast.success(`Added "${newItem.productName}" to sale items.`);
 
-    // Reset draft fields for quick next entry
+    // Reset draft fields for clean next entry
     setDraftName('');
+    setDraftModel('');
+    setDraftSku('');
+    setDraftUnitPrice('');
     setDraftSerialNumber('');
     setDraftNextServiceDate('');
     setDraftDiscountAmount('0');
+    setDraftPurificationCapacity('');
+    setDraftStorageCapacity('');
+    setDraftTechnology('');
+    setDraftHsnCode('');
   };
 
   const handleUpdateItem = <K extends keyof FormLineItem>(index: number, field: K, value: FormLineItem[K]) => {
@@ -399,7 +406,7 @@ export const SaleCreatePage: React.FC = () => {
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
       <PageHeader
         title="Create New Sale"
-        description="Record RO machine purchase or spare parts order with automated GST and asset creation."
+        description="Record product purchase or spare parts order with automated GST and asset creation."
         breadcrumbs={[
           { label: 'Home', href: '/dashboard' },
           { label: 'Sales', href: '/sales' },
@@ -601,8 +608,8 @@ export const SaleCreatePage: React.FC = () => {
                       : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-100'
                   }`}
                 >
-                  <span className="text-base">💧</span>
-                  <span>RO Purifier Machine</span>
+                  <span className="text-base">📦</span>
+                  <span>Main Product / Equipment</span>
                 </button>
 
                 <button
@@ -615,22 +622,22 @@ export const SaleCreatePage: React.FC = () => {
                   }`}
                 >
                   <span className="text-base">🔧</span>
-                  <span>Spare Part / Filter / Accessory</span>
+                  <span>Spare Part / Component / Accessory</span>
                 </button>
               </div>
 
               {/* Dynamic Form for the selected Specifier */}
               <div className="pt-2 border-t border-slate-200 space-y-3">
                 {draftSpecifier === 'RO_MACHINE' ? (
-                  /* ================= RO PURIFIER FIELDS ================= */
+                  /* ================= PRODUCT FIELDS ================= */
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          RO Machine / Model Name <span className="text-red-500">*</span>
+                          Product / Item Name <span className="text-red-500">*</span>
                         </label>
                         <Input
-                          placeholder="e.g. Kent Grand Plus RO+UV+UF+TDS Controller"
+                          placeholder="e.g. Model X-200, Commercial Equipment, Standard Unit"
                           value={draftName}
                           onChange={(e) => setDraftName(e.target.value)}
                         />
@@ -639,7 +646,7 @@ export const SaleCreatePage: React.FC = () => {
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">Brand / Make</label>
                         <Input
-                          placeholder="e.g. Kent, Aquaguard, Pureit, SR OEM"
+                          placeholder="e.g. OEM, Manufacturer Name"
                           value={draftBrand}
                           onChange={(e) => setDraftBrand(e.target.value)}
                         />
@@ -648,27 +655,27 @@ export const SaleCreatePage: React.FC = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Purification Capacity</label>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Operating / Output Capacity</label>
                         <Input
-                          placeholder="e.g. 15 LPH, 25 LPH, 50 LPH, 100 GPD"
+                          placeholder="e.g. 50 units/hr, 1000W, standard capacity"
                           value={draftPurificationCapacity}
                           onChange={(e) => setDraftPurificationCapacity(e.target.value)}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Storage Tank Capacity</label>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Storage / Volume Capacity</label>
                         <Input
-                          placeholder="e.g. 8 Litres, 10 Litres, 12L"
+                          placeholder="e.g. 10 Litres, 50kg, standard volume"
                           value={draftStorageCapacity}
                           onChange={(e) => setDraftStorageCapacity(e.target.value)}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Purification Technology</label>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Technology / System Type</label>
                         <Input
-                          placeholder="e.g. RO + UV + UF + TDS Control"
+                          placeholder="e.g. Digital, Electrical, Mechanical, Automated"
                           value={draftTechnology}
                           onChange={(e) => setDraftTechnology(e.target.value)}
                         />
@@ -678,10 +685,10 @@ export const SaleCreatePage: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Machine Serial Number <span className="text-slate-400 font-normal">(Optional)</span>
+                          Product Serial Number <span className="text-slate-400 font-normal">(Optional)</span>
                         </label>
                         <Input
-                          placeholder="e.g. SN-2026-KG-09812 (Auto if blank)"
+                          placeholder="e.g. SN-2026-00124 (Auto if blank)"
                           value={draftSerialNumber}
                           onChange={(e) => setDraftSerialNumber(e.target.value)}
                           className="font-mono text-xs"
@@ -701,9 +708,9 @@ export const SaleCreatePage: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">HSN Code</label>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">HSN / SAC Code</label>
                         <Input
-                          placeholder="84212190"
+                          placeholder="e.g. 8421 or HSN code"
                           value={draftHsnCode}
                           onChange={(e) => setDraftHsnCode(e.target.value)}
                           className="font-mono text-xs"
@@ -712,15 +719,15 @@ export const SaleCreatePage: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  /* ================= SPARE PART / FILTER FIELDS ================= */
+                  /* ================= SPARE PART / COMPONENT FIELDS ================= */
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Spare Part / Filter Name <span className="text-red-500">*</span>
+                          Spare Part / Component Name <span className="text-red-500">*</span>
                         </label>
                         <Input
-                          placeholder="e.g. Sediment Filter 10 Inch Spun, RO Membrane 75 GPD, Booster Pump 24V"
+                          placeholder="e.g. Power Supply Module, Replacement Valve, Motor Assembly, Cable Set"
                           value={draftName}
                           onChange={(e) => setDraftName(e.target.value)}
                         />
@@ -730,15 +737,16 @@ export const SaleCreatePage: React.FC = () => {
                         <label className="block text-xs font-semibold text-slate-700 mb-1">Component Category</label>
                         <Select
                           options={[
-                            { value: 'Filter Cartridge', label: 'Filter Cartridge (Sediment/Carbon)' },
-                            { value: 'RO Membrane', label: 'RO Membrane (75/80/100 GPD)' },
-                            { value: 'Booster Pump', label: 'Booster Pump (24V / 48V)' },
-                            { value: 'SMPS Power Adapter', label: 'SMPS Power Adapter (24V/36V)' },
-                            { value: 'Solenoid / Float Valve', label: 'Solenoid Valve (SV) / Float Valve' },
-                            { value: 'UV Tube / Ballast', label: 'UV Lamp Tube / Philips Ballast' },
-                            { value: 'Fitting / Tubing', label: 'Diverter Valve / Fitting / Tubing' },
-                            { value: 'Mineral Cartridge', label: 'Alkaline Bio-Mineral Cartridge' },
-                            { value: 'Chemical / Consumable', label: 'Antiscalant Ball / Media Resin' },
+                            { value: 'General Component', label: 'General Component / Module' },
+                            { value: 'Electronic Board', label: 'Electronic Board / Circuit' },
+                            { value: 'Power Supply', label: 'Power Supply / Adapter / SMPS' },
+                            { value: 'Motor & Drive', label: 'Motor / Drive / Mechanical Part' },
+                            { value: 'Valve & Regulator', label: 'Valve / Regulator / Controller' },
+                            { value: 'Filter & Cartridge', label: 'Filter / Cartridge / Element' },
+                            { value: 'Fittings & Hardware', label: 'Fittings / Connectors / Hardware' },
+                            { value: 'Sensors & Metering', label: 'Sensors / Metering / Gauges' },
+                            { value: 'Wiring & Cables', label: 'Wiring / Cable Harness' },
+                            { value: 'Consumables & Media', label: 'Consumables / Chemical Media' },
                             { value: 'Other Accessory', label: 'Other Spare / Accessory' },
                           ]}
                           value={draftPartCategory}
@@ -751,7 +759,7 @@ export const SaleCreatePage: React.FC = () => {
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">Brand / Grade</label>
                         <Input
-                          placeholder="e.g. Kemflo, Vontron, Dow Filmtec, BNQS"
+                          placeholder="e.g. OEM, Standard, Industrial Grade"
                           value={draftBrand}
                           onChange={(e) => setDraftBrand(e.target.value)}
                         />
@@ -760,7 +768,7 @@ export const SaleCreatePage: React.FC = () => {
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">Part SKU / Code</label>
                         <Input
-                          placeholder="e.g. SED-10-SPUN, MEM-75-VON"
+                          placeholder="e.g. SKU-1001, PART-A24"
                           value={draftSku}
                           onChange={(e) => setDraftSku(e.target.value)}
                           className="font-mono text-xs"
@@ -768,9 +776,9 @@ export const SaleCreatePage: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">HSN Code</label>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">HSN / SAC Code</label>
                         <Input
-                          placeholder="84219900"
+                          placeholder="e.g. 8421 or HSN code"
                           value={draftHsnCode}
                           onChange={(e) => setDraftHsnCode(e.target.value)}
                           className="font-mono text-xs"
@@ -803,6 +811,7 @@ export const SaleCreatePage: React.FC = () => {
                         type="number"
                         step="0.01"
                         min="0"
+                        placeholder="0.00"
                         value={draftUnitPrice}
                         onChange={(e) => setDraftUnitPrice(e.target.value)}
                       />
@@ -887,7 +896,7 @@ export const SaleCreatePage: React.FC = () => {
                     onClick={handleAddDraftItem}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
                   >
-                    + Add This {draftSpecifier === 'RO_MACHINE' ? 'RO Machine' : 'Spare Part'} to Sale
+                    + Add This {draftSpecifier === 'RO_MACHINE' ? 'Product' : 'Spare Part'} to Sale
                   </Button>
                 </div>
               </div>
@@ -923,11 +932,11 @@ export const SaleCreatePage: React.FC = () => {
                             <span
                               className={`px-2 py-0.5 rounded-md text-2xs font-bold ${
                                 item.productType === 'RO_MACHINE'
-                                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                                  : 'bg-amber-100 text-amber-800 border border-amber-200'
+                                   ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                   : 'bg-amber-100 text-amber-800 border border-amber-200'
                               }`}
                             >
-                              {item.productType === 'RO_MACHINE' ? '💧 RO Machine' : `🔧 Spare: ${item.partCategory || 'Part'}`}
+                              {item.productType === 'RO_MACHINE' ? '📦 Product' : `🔧 Spare: ${item.partCategory || 'Part'}`}
                             </span>
                             {item.brand && (
                               <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-2xs font-medium">
@@ -940,7 +949,7 @@ export const SaleCreatePage: React.FC = () => {
                             {item.sku && <span>SKU: {item.sku}</span>}
                             {item.hsnCode && <span>HSN: {item.hsnCode}</span>}
                             {item.purificationCapacity && <span>Capacity: {item.purificationCapacity}</span>}
-                            {item.storageCapacity && <span>Tank: {item.storageCapacity}</span>}
+                            {item.storageCapacity && <span>Storage: {item.storageCapacity}</span>}
                             {item.technology && <span>Tech: {item.technology}</span>}
                           </div>
                         </div>
@@ -994,7 +1003,7 @@ export const SaleCreatePage: React.FC = () => {
                       {item.productType === 'RO_MACHINE' && (
                         <div className="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">Machine Serial #:</span>
+                            <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">Product Serial #:</span>
                             <input
                               type="text"
                               placeholder="e.g. SN-8921-2026"

@@ -54,7 +54,7 @@ export const InventoryItemDetailModal: React.FC<InventoryItemDetailModalProps> =
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-gray-900">{item?.name || 'Loading item...'}</h2>
                 <span className="text-xs px-2 py-0.5 rounded-md bg-gray-200 text-gray-700 font-medium">
-                  {item?.category || 'Spare Part'}
+                  {item?.category || 'Item'}
                 </span>
                 {item?.brand && (
                   <span className="text-xs px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 font-medium">
@@ -63,7 +63,7 @@ export const InventoryItemDetailModal: React.FC<InventoryItemDetailModalProps> =
                 )}
               </div>
               <p className="text-xs text-gray-500 font-mono mt-0.5">
-                SKU / Part #: {item?.partNumber || 'N/A'}
+                SKU / Code: {item?.partNumber || 'N/A'}
               </p>
             </div>
           </div>

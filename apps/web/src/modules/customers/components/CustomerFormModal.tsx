@@ -14,7 +14,7 @@ import {
   checkCustomerDuplicateApi,
   type CustomerSummary,
 } from '../customer.api';
-import { AlertCircle, User, Phone, Mail, Building, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, User, Phone, Mail, Building, Plus, Trash2, MapPin } from 'lucide-react';
 
 export interface CustomerFormModalProps {
   isOpen: boolean;
@@ -35,7 +35,6 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
   const updateMutation = useUpdateCustomerMutation(customer?.id || '');
 
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
-  const [selectedAddressIndex, setSelectedAddressIndex] = useState<number>(0);
 
   const getInitialValues = (cust?: CustomerSummary | null): CreateCustomerInput => ({
     fullName: cust?.fullName || '',
@@ -49,7 +48,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
     addresses: cust?.addresses && cust.addresses.length > 0
       ? cust.addresses.map((a) => ({
           addressType: a.addressType || 'SERVICE',
-          addressLine1: a.addressLine1 || '',
+          addressLine1: (a.addressLine1 === 'Main Service Location' ? '' : a.addressLine1) || '',
           addressLine2: a.addressLine2 || '',
           landmark: a.landmark || '',
           city: a.city || '',
@@ -93,18 +92,8 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
     if (isOpen) {
       reset(getInitialValues(customer));
       setDuplicateWarning(null);
-      const hasExistingAddress = !!customer?.addresses?.some(
-        (a) => (a.addressLine1 && a.addressLine1 !== 'Main Service Location') || a.city || a.postalCode
-      );
-      setSelectedAddressIndex(hasExistingAddress ? 0 : -1);
     }
   }, [isOpen, customer, reset]);
-
-  useEffect(() => {
-    if (selectedAddressIndex >= 0 && selectedAddressIndex >= fields.length) {
-      setSelectedAddressIndex(Math.max(0, fields.length - 1));
-    }
-  }, [fields.length, selectedAddressIndex]);
 
   const phoneValue = watch('phone');
   const emailValue = watch('email');
@@ -294,49 +283,20 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           )}
         </div>
 
-        {/* Addresses Section (Optional Dropdown & More Options) */}
-        <div className="space-y-3">
+        {/* Addresses Section */}
+        <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
             <div className="flex items-center gap-1.5">
               <h4 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
-                2. Service &amp; Installation Addresses
+                2. Customer Address
               </h4>
-              <span className="text-[11px] text-slate-400 font-normal">(Optional)</span>
+              <span className="text-[11px] text-slate-400 font-normal">(Service &amp; Installation Location)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  append({
-                    addressType: 'SERVICE',
-                    addressLine1: '',
-                    addressLine2: '',
-                    landmark: '',
-                    city: '',
-                    state: '',
-                    postalCode: '',
-                    isDefault: false,
-                  });
-                  setSelectedAddressIndex(fields.length);
-                }}
-                leftIcon={<Plus className="w-3.5 h-3.5" />}
-              >
-                Add Another Address
-              </Button>
-            </div>
-          </div>
-
-          {/* Service & Installation Address Selection Dropdown */}
-          <Select
-            label="SELECT SERVICE & INSTALLATION ADDRESS"
-            value={selectedAddressIndex === -1 ? 'none' : String(selectedAddressIndex)}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === 'none') {
-                setSelectedAddressIndex(-1);
-              } else if (val === 'add_new') {
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
                 append({
                   addressType: 'SERVICE',
                   addressLine1: '',
@@ -347,115 +307,83 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
                   postalCode: '',
                   isDefault: false,
                 });
-                setSelectedAddressIndex(fields.length);
-              } else {
-                setSelectedAddressIndex(Number(val));
-              }
-            }}
-            options={[
-              { value: 'none', label: '-- Select / Add Service Address (Optional) --' },
-              ...fields.map((field, idx) => {
-                const addr = watch('addresses')?.[idx] || {};
-                const isDefault = idx === 0 || addr.isDefault;
-                const parts: string[] = [];
-                const line1 = (addr.addressLine1 || '').trim();
-                const city = (addr.city || '').trim();
-                const postalCode = (addr.postalCode || (addr as any).pincode || '').trim();
-
-                if (line1 && line1 !== 'Main Service Location') parts.push(line1);
-                if (city) parts.push(city);
-                if (postalCode) parts.push(postalCode);
-
-                const prefix = `Address #${idx + 1}${isDefault ? ' (Default Service Location)' : ''}`;
-                const details = parts.length > 0 ? ` — ${parts.join(' — ')}` : (idx === 0 ? ' — Main Service Location' : ' — New Service Location');
-                return {
-                  value: String(idx),
-                  label: `${prefix}${details}`,
-                };
-              }),
-            ]}
-          />
-
-          {/* Active Selected Address Card (displayed only when an address is chosen) */}
-          {selectedAddressIndex >= 0 && fields[selectedAddressIndex] && (
-            <div
-              key={fields[selectedAddressIndex].id}
-              className="p-4 rounded-btn border border-slate-200 bg-slate-50/50 space-y-3 relative transition-all"
+              }}
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-700">
-                  Address #{selectedAddressIndex + 1} {selectedAddressIndex === 0 ? '(Default Service Location)' : ''}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedAddressIndex(-1)}
-                    className="text-xs text-slate-500 hover:text-slate-800 font-medium underline"
-                  >
-                    Hide Form
-                  </button>
-                  {fields.length > 1 && (
+              Add Another Address
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            {fields.map((field, idx) => (
+              <div
+                key={field.id}
+                className="p-4 rounded-btn border border-slate-200 bg-slate-50/50 space-y-3 relative"
+              >
+                {fields.length > 1 && (
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/70">
+                    <span className="text-xs font-semibold text-slate-700">
+                      Address #{idx + 1}
+                    </span>
                     <button
                       type="button"
-                      onClick={() => {
-                        remove(selectedAddressIndex);
-                        setSelectedAddressIndex(Math.max(0, selectedAddressIndex - 1));
-                      }}
-                      className="p-1 text-slate-400 hover:text-danger-600 rounded flex items-center gap-1 text-xs font-medium"
-                      aria-label="Remove address"
+                      onClick={() => remove(idx)}
+                      className="p-1 text-slate-400 hover:text-rose-600 rounded flex items-center gap-1 text-xs font-medium transition-colors"
+                      aria-label={`Remove address ${idx + 1}`}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                       <span>Remove</span>
                     </button>
-                  )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Input
+                    label="Address Line 1"
+                    placeholder="House/Plot/Flat No., Street, Area"
+                    leftIcon={<MapPin className="w-4 h-4 text-slate-400" />}
+                    error={errors.addresses?.[idx]?.addressLine1?.message}
+                    {...register(`addresses.${idx}.addressLine1`)}
+                  />
+
+                  <Input
+                    label="Address Line 2 (Optional)"
+                    placeholder="Apartment, Wing, Colony"
+                    error={errors.addresses?.[idx]?.addressLine2?.message}
+                    {...register(`addresses.${idx}.addressLine2`)}
+                  />
+
+                  <Input
+                    label="Landmark (Optional)"
+                    placeholder="Near landmark or prominent spot"
+                    error={errors.addresses?.[idx]?.landmark?.message}
+                    {...register(`addresses.${idx}.landmark`)}
+                  />
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input
+                      label="City"
+                      placeholder="e.g. Pune"
+                      error={errors.addresses?.[idx]?.city?.message}
+                      {...register(`addresses.${idx}.city`)}
+                    />
+                    <Input
+                      label="State"
+                      placeholder="e.g. Maharashtra"
+                      error={errors.addresses?.[idx]?.state?.message}
+                      {...register(`addresses.${idx}.state`)}
+                    />
+                    <Input
+                      label="Pincode"
+                      placeholder="e.g. 411001"
+                      error={errors.addresses?.[idx]?.postalCode?.message}
+                      {...register(`addresses.${idx}.postalCode`)}
+                    />
+                  </div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input
-                  label="Address Line 1 (Street / Area)"
-                  placeholder="House/Plot No., Street, Area (e.g. Pandri Road)"
-                  error={errors.addresses?.[selectedAddressIndex]?.addressLine1?.message}
-                  {...register(`addresses.${selectedAddressIndex}.addressLine1`)}
-                />
-
-                <Input
-                  label="Address Line 2 (Optional)"
-                  placeholder="Apartment, Wing, Colony"
-                  error={errors.addresses?.[selectedAddressIndex]?.addressLine2?.message}
-                  {...register(`addresses.${selectedAddressIndex}.addressLine2`)}
-                />
-
-                <Input
-                  label="Landmark (Optional)"
-                  placeholder="Near City Hospital"
-                  error={errors.addresses?.[selectedAddressIndex]?.landmark?.message}
-                  {...register(`addresses.${selectedAddressIndex}.landmark`)}
-                />
-
-                <div className="grid grid-cols-3 gap-2">
-                  <Input
-                    label="City"
-                    placeholder="e.g. Pune"
-                    error={errors.addresses?.[selectedAddressIndex]?.city?.message}
-                    {...register(`addresses.${selectedAddressIndex}.city`)}
-                  />
-                  <Input
-                    label="State"
-                    placeholder="e.g. Maharashtra"
-                    error={errors.addresses?.[selectedAddressIndex]?.state?.message}
-                    {...register(`addresses.${selectedAddressIndex}.state`)}
-                  />
-                  <Input
-                    label="Pincode"
-                    placeholder="e.g. 411001"
-                    error={errors.addresses?.[selectedAddressIndex]?.postalCode?.message}
-                    {...register(`addresses.${selectedAddressIndex}.postalCode`)}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
 
         {/* Notes */}

@@ -18,6 +18,14 @@ export class TechniciansService {
     return tech;
   }
 
+  async getTechnician360Profile(id: string) {
+    const profile = await techniciansRepository.getTechnician360AdminProfile(id);
+    if (!profile) {
+      throw new Error('Technician not found');
+    }
+    return profile;
+  }
+
   async getKPIs() {
     return techniciansRepository.getKPIs();
   }
@@ -32,6 +40,10 @@ export class TechniciansService {
 
   async deleteTechnician(id: string, actorId?: string) {
     return techniciansRepository.delete(id, actorId);
+  }
+
+  async togglePortalAccess(id: string, portalEnabled: boolean, actorId?: string) {
+    return techniciansRepository.setPortalAccess(id, portalEnabled, actorId);
   }
 }
 

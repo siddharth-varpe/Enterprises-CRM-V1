@@ -521,7 +521,7 @@ export class RentalRepository {
       id: rentalId,
       rentalNumber,
       customerId: input.customerId,
-      machineType: input.machineType || 'RO',
+      machineType: input.machineType || 'STANDARD',
       machineModel: input.machineModel,
       serialNumber: input.serialNumber,
       assetId: input.assetId && input.assetId.trim() ? (input.assetId as any) : undefined,
@@ -606,7 +606,7 @@ export class RentalRepository {
             id: crypto.randomUUID(),
             rentalId: inserted.id,
             eventType: 'RENTAL_CREATED',
-            description: `Rental agreement ${rentalNumber} created for machine ${input.machineModel} (Serial: ${input.serialNumber}) with monthly rent ₹${monthlyRent}.`,
+            description: `Rental agreement ${rentalNumber} created for ${input.machineModel} (Serial: ${input.serialNumber}) with monthly rent ₹${monthlyRent}.`,
             actorId: null,
             actorName: input.actorName || 'Admin',
             createdAt: new Date(),
@@ -1101,7 +1101,7 @@ export class RentalRepository {
           await tx.insert(rentalEvents).values({
             rentalId: rental.id,
             eventType: 'MACHINE_RETURNED',
-            description: `Machine returned on ${returnDate.toLocaleDateString()}. Condition: ${input.returnCondition}. Refund: ₹${input.refundAmount || 0}. Damage charges: ₹${input.damageCharges || 0}.`,
+            description: `Equipment returned on ${returnDate.toLocaleDateString()}. Condition: ${input.returnCondition}. Refund: ₹${input.refundAmount || 0}. Damage charges: ₹${input.damageCharges || 0}.`,
             actorId: input.actorId,
             actorName: input.actorName || 'Admin',
           });

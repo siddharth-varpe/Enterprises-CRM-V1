@@ -55,10 +55,10 @@ export const CustomerRentalsSection: React.FC<CustomerRentalsSectionProps> = ({
             <Repeat className="w-5 h-5 text-primary-600" />
             <div>
               <CardTitle className="text-base font-bold text-slate-900">
-                Machine Rentals &amp; Subscriptions
+                Product Rentals &amp; Subscriptions
               </CardTitle>
               <p className="text-xs text-slate-500 mt-0.5">
-                Active and historical recurring RO purifier rental agreements for this customer.
+                Active and historical recurring rental agreements for this customer.
               </p>
             </div>
           </div>
@@ -85,7 +85,7 @@ export const CustomerRentalsSection: React.FC<CustomerRentalsSectionProps> = ({
               </div>
               <div className="text-sm font-bold text-slate-800">No rentals found for this customer</div>
               <div className="text-xs text-slate-500">
-                This customer does not have any active or past RO machine rental agreements.
+                This customer does not have any active or past rental agreements.
               </div>
               <Button
                 variant="outline"
@@ -93,7 +93,7 @@ export const CustomerRentalsSection: React.FC<CustomerRentalsSectionProps> = ({
                 onClick={() => setIsCreateModalOpen(true)}
                 className="mt-3 text-xs h-7 px-3"
               >
-                + Assign Rental Machine
+                + New Rental Agreement
               </Button>
             </div>
           ) : (
@@ -102,7 +102,7 @@ export const CustomerRentalsSection: React.FC<CustomerRentalsSectionProps> = ({
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-600 font-semibold text-[11px]">
                     <th className="py-3 px-4">Agreement</th>
-                    <th className="py-3 px-4">Rented Machine</th>
+                    <th className="py-3 px-4">Rented Equipment / Product</th>
                     <th className="py-3 px-4 font-mono text-right">Monthly Rent</th>
                     <th className="py-3 px-4">Deposit</th>
                     <th className="py-3 px-4">Status</th>
@@ -163,7 +163,7 @@ export const CustomerRentalsSection: React.FC<CustomerRentalsSectionProps> = ({
                             <button
                               type="button"
                               onClick={() => setSelectedRentalForReturn(rental)}
-                              title="Return Machine"
+                              title="Return Equipment / Item"
                               className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                             >
                               <RotateCcw className="w-4 h-4" />

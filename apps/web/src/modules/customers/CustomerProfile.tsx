@@ -328,9 +328,9 @@ export const CustomerProfile: React.FC = () => {
         s.asset?.customName ||
         s.asset?.product?.name ||
         s.productBrand ||
-        'RO Water Purifier';
+        'Product Asset';
 
-      const typeLabel = s.serviceType ? s.serviceType.replace(/_/g, ' ') : 'RO Water Purifier Service';
+      const typeLabel = s.serviceType ? s.serviceType.replace(/_/g, ' ') : 'Scheduled Service';
       const statusLabel =
         s.status === 'COMPLETED'
           ? 'Completed'
@@ -426,8 +426,8 @@ export const CustomerProfile: React.FC = () => {
     saleNumber: s.saleNumber,
     date: formatDate(s.saleDate || s.createdAt),
     products: (s as any).items && (s as any).items.length > 0
-      ? (s as any).items.map((i: any) => `${i.productNameSnapshot || i.productName || 'RO Product'} (${i.quantity || 1}x)`).join(', ')
-      : s.notes || 'RO System / Spare Parts Order',
+      ? (s as any).items.map((i: any) => `${i.productNameSnapshot || i.productName || 'Product'} (${i.quantity || 1}x)`).join(', ')
+      : s.notes || 'Product / Spare Parts Order',
     itemsList: (s as any).items || [],
     totalAmount: formatINR(s.totalAmount),
     status: s.status === 'COMPLETED' ? 'Delivered' : s.status === 'DRAFT' ? 'Draft / Processing' : 'Cancelled',
@@ -471,12 +471,66 @@ export const CustomerProfile: React.FC = () => {
     ? Math.round((outstandingNumber / totalInvoicedNumber) * 100)
     : 0;
 
+  // Real Year-over-Year Spend Growth calculation from original customer transaction records
+  const currentYear = new Date().getFullYear();
+  const previousYear = currentYear - 1;
+
+  let currentYearSpend = 0;
+  let previousYearSpend = 0;
+
+  if (recordedInvoices.length > 0) {
+    recordedInvoices.forEach((inv) => {
+      const d = new Date(inv.invoiceDate || inv.createdAt);
+      if (!isNaN(d.getTime())) {
+        const yr = d.getFullYear();
+        const amt = parseFloat(inv.totalAmount) || 0;
+        if (yr === currentYear) currentYearSpend += amt;
+        else if (yr === previousYear) previousYearSpend += amt;
+      }
+    });
+  } else if (customerSalesList.length > 0) {
+    customerSalesList.forEach((s) => {
+      const d = new Date(s.saleDate || s.createdAt);
+      if (!isNaN(d.getTime())) {
+        const yr = d.getFullYear();
+        const amt = parseFloat(s.totalAmount) || 0;
+        if (yr === currentYear) currentYearSpend += amt;
+        else if (yr === previousYear) previousYearSpend += amt;
+      }
+    });
+  } else if (recordedPayments.length > 0) {
+    recordedPayments.forEach((p) => {
+      const d = new Date(p.paymentDate || p.createdAt);
+      if (!isNaN(d.getTime())) {
+        const yr = d.getFullYear();
+        const amt = parseFloat(p.amount) || 0;
+        if (yr === currentYear) currentYearSpend += amt;
+        else if (yr === previousYear) previousYearSpend += amt;
+      }
+    });
+  }
+
+  let spendGrowthPercent = 0;
+  if (totalInvoicedNumber > 0) {
+    if (previousYearSpend > 0) {
+      spendGrowthPercent = ((currentYearSpend - previousYearSpend) / previousYearSpend) * 100;
+    } else if (currentYearSpend > 0) {
+      spendGrowthPercent = 100;
+    }
+  }
+
+  const isPositiveGrowth = spendGrowthPercent > 0;
+  const isNegativeGrowth = spendGrowthPercent < 0;
+  const spendGrowthLabel = spendGrowthPercent === 0
+    ? '0% vs last year'
+    : `${isPositiveGrowth ? '↑' : '↓'} ${Math.abs(spendGrowthPercent) % 1 === 0 ? Math.abs(spendGrowthPercent).toFixed(0) : Math.abs(spendGrowthPercent).toFixed(1)}% vs last year`;
+
   // Real Invoice History List for Overview Table
   const displayInvoices = recordedInvoices.map((inv) => ({
     id: inv.invoiceNumber,
     dbId: inv.id,
     date: formatDate(inv.invoiceDate || inv.createdAt),
-    service: inv.notes || 'RO System / Spare Parts Sale',
+    service: inv.notes || 'Product / Spare Parts Sale',
     amount: formatINR(inv.totalAmount),
     status: inv.status === 'PAID' ? 'Paid' : inv.status === 'PARTIALLY_PAID' ? 'Partially Paid' : inv.status === 'OVERDUE' ? 'Overdue' : 'Not Paid',
     statusColor: inv.status === 'PAID'
@@ -1080,8 +1134,16 @@ export const CustomerProfile: React.FC = () => {
                   <div className="text-2xl font-bold text-slate-900 font-mono tracking-tight mt-0.5">
                     {totalSpentFormatted}
                   </div>
-                  <div className="inline-flex items-center gap-1 text-2xs font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full mt-1.5 font-mono">
-                    <span>↑ 12.5% vs last year</span>
+                  <div
+                    className={`inline-flex items-center gap-1 text-2xs font-bold px-2 py-0.5 rounded-full mt-1.5 font-mono ${
+                      isPositiveGrowth
+                        ? 'text-emerald-700 bg-emerald-100/80'
+                        : isNegativeGrowth
+                        ? 'text-rose-700 bg-rose-100/80'
+                        : 'text-slate-600 bg-slate-100'
+                    }`}
+                  >
+                    <span>{spendGrowthLabel}</span>
                   </div>
                 </div>
 
@@ -1271,78 +1333,138 @@ export const CustomerProfile: React.FC = () => {
             <Card className="p-5 rounded-2xl border border-slate-200/80 shadow-xs bg-white">
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                 <h3 className="text-sm font-bold text-slate-900">Communication</h3>
-                <button type="button" className="text-xs text-blue-600 font-bold hover:underline cursor-pointer">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('activity')}
+                  className="text-xs text-blue-600 font-bold hover:underline cursor-pointer"
+                >
                   View All
                 </button>
               </div>
 
               <div className="space-y-3.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                {/* Email Item */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                       <Mail className="w-4 h-4" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-2xs text-slate-400 font-medium">Email</div>
-                      <div className="font-bold text-slate-800">{customer.email ? `email: ${customer.email}` : 'rahul.patil@example.com'}</div>
+                      {customer.email && customer.email.trim() ? (
+                        <a
+                          href={`mailto:${customer.email.trim()}`}
+                          className="font-bold text-slate-800 hover:text-blue-600 transition-colors truncate block"
+                          title={customer.email.trim()}
+                        >
+                          {customer.email.trim()}
+                        </a>
+                      ) : (
+                        <div className="font-medium text-slate-400 italic">Unavailable</div>
+                      )}
                     </div>
                   </div>
-                  <span className="text-2xs font-bold text-emerald-600 flex items-center gap-0.5">
-                    Verified ✓
-                  </span>
+                  {customer.email && customer.email.trim() ? (
+                    <span className="text-2xs font-bold text-emerald-600 flex items-center gap-0.5 shrink-0">
+                      Verified ✓
+                    </span>
+                  ) : (
+                    <span className="text-2xs font-medium text-slate-400 shrink-0">
+                      Unavailable
+                    </span>
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                {/* Phone Item */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                       <Phone className="w-4 h-4" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-2xs text-slate-400 font-medium">Phone</div>
-                      <div className="font-bold text-slate-800">{customer.phone ? `tel: ${customer.phone}` : '+91 98765 43210'}</div>
+                      {customer.phone && customer.phone.trim() ? (
+                        <a
+                          href={`tel:${customer.phone.trim()}`}
+                          className="font-bold text-slate-800 hover:text-blue-600 font-mono transition-colors truncate block"
+                          title={customer.phone.trim()}
+                        >
+                          {customer.phone.trim()}
+                        </a>
+                      ) : (
+                        <div className="font-medium text-slate-400 italic">Unavailable</div>
+                      )}
                     </div>
                   </div>
-                  <span className="text-2xs font-bold text-emerald-600 flex items-center gap-0.5">
-                    Verified ✓
-                  </span>
+                  {customer.phone && customer.phone.trim() ? (
+                    <span className="text-2xs font-bold text-emerald-600 flex items-center gap-0.5 shrink-0">
+                      Verified ✓
+                    </span>
+                  ) : (
+                    <span className="text-2xs font-medium text-slate-400 shrink-0">
+                      Unavailable
+                    </span>
+                  )}
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-start gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0 mt-0.5">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-2xs text-slate-400 font-medium">Last Interaction</div>
-                    <div className="font-bold text-slate-800">
-                      {(() => {
-                        const actDate = customerActivitiesData?.data?.[0]?.timestamp;
-                        if (actDate && !isNaN(new Date(actDate).getTime())) {
-                          return formatDate(actDate);
-                        }
-                        const pmtDate = allCustomerPayments[0]?.paymentDate || allCustomerPayments[0]?.createdAt;
-                        if (pmtDate && !isNaN(new Date(pmtDate).getTime())) {
-                          return formatDate(pmtDate);
-                        }
-                        const srvDate = customerServicesList[0]?.scheduledDate || customerServicesList[0]?.createdAt;
-                        if (srvDate && !isNaN(new Date(srvDate).getTime())) {
-                          return formatDate(srvDate);
-                        }
-                        if (customer?.createdAt && !isNaN(new Date(customer.createdAt).getTime())) {
-                          return formatDate(customer.createdAt);
-                        }
-                        return 'No interactions yet';
-                      })()}
+                {/* Last Interaction Item */}
+                {(() => {
+                  // Find real interaction activities (excluding initial system record creations)
+                  const interactionActivity = customerActivitiesData?.data?.find(
+                    (act) =>
+                      !act.description?.toLowerCase().includes('account created') &&
+                      !act.description?.toLowerCase().includes('customer created') &&
+                      !act.description?.toLowerCase().includes('profile registered')
+                  );
+                  const latestService = customerServicesList[0];
+                  const latestPayment = allCustomerPayments[0];
+                  const latestSale = customerSalesList?.[0];
+
+                  let interactionDate: string | null = null;
+                  let interactionDesc: string | null = null;
+
+                  if (interactionActivity?.timestamp && !isNaN(new Date(interactionActivity.timestamp).getTime())) {
+                    interactionDate = formatDate(interactionActivity.timestamp);
+                    interactionDesc = interactionActivity.description;
+                  } else if (latestService?.scheduledDate || latestService?.createdAt) {
+                    const rawDate = latestService.scheduledDate || latestService.createdAt;
+                    interactionDate = !isNaN(new Date(rawDate).getTime()) ? formatDate(rawDate) : null;
+                    interactionDesc = latestService.title ? `Service: ${latestService.title}` : 'Scheduled Service';
+                  } else if (latestPayment?.paymentDate || latestPayment?.createdAt) {
+                    const rawDate = latestPayment.paymentDate || latestPayment.createdAt;
+                    interactionDate = !isNaN(new Date(rawDate).getTime()) ? formatDate(rawDate) : null;
+                    interactionDesc = `Payment: ${formatINR(latestPayment.amount)}`;
+                  } else if (latestSale?.saleDate || latestSale?.createdAt) {
+                    const rawDate = latestSale.saleDate || latestSale.createdAt;
+                    interactionDate = !isNaN(new Date(rawDate).getTime()) ? formatDate(rawDate) : null;
+                    interactionDesc = `Sale Order #${latestSale.saleNumber || latestSale.id.slice(0, 8)}`;
+                  }
+
+                  return (
+                    <div className="pt-2 border-t border-slate-100 flex items-start gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0 mt-0.5">
+                        <Clock className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-2xs text-slate-400 font-medium">Last Interaction</div>
+                        <div className="font-bold text-slate-800">
+                          {interactionDate ? (
+                            interactionDate
+                          ) : (
+                            <span className="font-medium text-slate-400 italic">Unavailable</span>
+                          )}
+                        </div>
+                        <div className="text-2xs text-slate-500 mt-0.5 font-medium line-clamp-1">
+                          {interactionDesc ? (
+                            interactionDesc
+                          ) : (
+                            <span className="text-slate-400 italic">Unavailable</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-2xs text-slate-500 mt-0.5 font-medium line-clamp-1">
-                      {customerActivitiesData?.data?.[0]?.description ||
-                        (customerServicesList[0]
-                          ? `Service: ${customerServicesList[0].title || 'Maintenance'}`
-                          : customer?.createdAt
-                          ? 'Customer profile registered'
-                          : 'No recent interactions')}
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
             </Card>
           </div>
@@ -1356,7 +1478,7 @@ export const CustomerProfile: React.FC = () => {
             <div>
               <h3 className="text-base font-bold text-slate-900">Purchases &amp; Sales Orders</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                All products, RO machines, filters, and spare parts purchased by {customer.fullName}
+                All products, items, and spare parts purchased by {customer.fullName}
               </p>
             </div>
             <div className="flex items-center gap-2">

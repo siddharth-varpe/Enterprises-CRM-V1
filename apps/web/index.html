@@ -2,45 +2,69 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="shortcut icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0B132B" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="SR CRM" />
-    <meta name="application-name" content="SR Enterprises CRM" />
+    <meta name="apple-mobile-web-app-title" id="app-apple-title" content="CRM" />
+    <meta name="application-name" id="app-name-meta" content="Enterprises CRM" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="description" content="SR Enterprises CRM - Commercial-grade SaaS for RO sales, service, warranty & job card management" />
+    <link rel="apple-touch-icon" id="app-apple-icon" href="/apple-touch-icon.png" />
+    <meta name="description" content="Enterprises CRM - Commercial-grade SaaS for sales, service, warranty & job card management" />
 
     <!-- Open Graph / Facebook / WhatsApp / LinkedIn / Telegram / Discord -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://crm.srenterprises.com/" />
-    <meta property="og:site_name" content="SR Enterprises CRM" />
-    <meta property="og:title" content="SR Enterprises CRM" />
-    <meta property="og:description" content="SR Enterprises CRM - Commercial-grade SaaS for RO sales, service, warranty & job card management" />
+    <meta property="og:site_name" content="Enterprises CRM" />
+    <meta property="og:title" content="Enterprises CRM" />
+    <meta property="og:description" content="Enterprises CRM - Commercial-grade SaaS for sales, service, warranty & job card management" />
     <meta property="og:image" content="/og-image.jpg" />
     <meta property="og:image:secure_url" content="/og-image.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1024" />
     <meta property="og:image:height" content="1024" />
-    <meta property="og:image:alt" content="SR Enterprises CRM" />
+    <meta property="og:image:alt" content="Enterprises CRM" />
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://crm.srenterprises.com/" />
-    <meta name="twitter:title" content="SR Enterprises CRM" />
-    <meta name="twitter:description" content="SR Enterprises CRM - Commercial-grade SaaS for RO sales, service, warranty & job card management" />
+    <meta name="twitter:title" content="Enterprises CRM" />
+    <meta name="twitter:description" content="Enterprises CRM - Commercial-grade SaaS for sales, service, warranty & job card management" />
     <meta name="twitter:image" content="/og-image.jpg" />
-    <meta name="twitter:image:alt" content="SR Enterprises CRM" />
+    <meta name="twitter:image:alt" content="Enterprises CRM" />
 
     <link rel="canonical" href="https://crm.srenterprises.com/" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <title>SR Enterprises CRM</title>
+    <link rel="manifest" id="app-manifest" href="/manifest-admin.webmanifest" />
+    <title id="app-title">Enterprises CRM</title>
+
+    <!-- Context-Aware Dynamic Manifest & App Identity Resolver (Synchronous pre-parse execution) -->
+    <script>
+      (function() {
+        try {
+          var isTech = window.location.pathname.startsWith('/technician');
+          var manifestEl = document.getElementById('app-manifest');
+          var appleTitleEl = document.getElementById('app-apple-title');
+          var appNameEl = document.getElementById('app-name-meta');
+          var appleIconEl = document.getElementById('app-apple-icon');
+          var titleEl = document.getElementById('app-title');
+
+          if (isTech) {
+            if (manifestEl) manifestEl.setAttribute('href', '/manifest-technician.webmanifest');
+            if (appleTitleEl) appleTitleEl.setAttribute('content', 'Technician');
+            if (appNameEl) appNameEl.setAttribute('content', 'Enterprises Technician');
+            if (appleIconEl) appleIconEl.setAttribute('href', '/apple-touch-icon-technician.png');
+            if (titleEl) titleEl.textContent = 'Enterprises Technician';
+            else document.title = 'Enterprises Technician';
+          }
+        } catch (e) {}
+      })();
+    </script>
 
     <!-- Immediate Application Loading Screen Preload & Code-Based Styles -->
     <link rel="preload" as="image" href="/crm-logo.png" type="image/png" />
@@ -240,14 +264,14 @@
   </head>
   <body class="bg-[#F4F6F8] text-slate-900 antialiased selection:bg-sky-600 selection:text-white font-sans">
     <!-- Immediate Real Code-Based Application Loading Screen (Desktop + Mobile) -->
-    <div id="crm-splash-screen" role="status" aria-live="polite" aria-label="Loading SR Enterprises CRM">
+    <div id="crm-splash-screen" role="status" aria-live="polite" aria-label="Loading Enterprises CRM">
       <div class="crm-splash-container">
         <!-- Approved Transparent CRM Logo PNG -->
         <div class="crm-splash-logo-wrapper">
           <img
             id="crm-splash-logo"
             src="/crm-logo.png"
-            alt="SR Enterprises CRM"
+            alt="Enterprises CRM"
             class="crm-splash-logo-img"
             width="220"
             height="292"

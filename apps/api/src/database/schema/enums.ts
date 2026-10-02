@@ -88,6 +88,7 @@ export const serviceStatusEnum = pgEnum('service_status', [
   'SCHEDULED',
   'ASSIGNED',
   'IN_PROGRESS',
+  'ON_HOLD',
   'COMPLETED',
   'CANCELLED',
   'OVERDUE',

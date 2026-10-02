@@ -129,7 +129,7 @@ export const RecordPurchaseModal: React.FC<RecordPurchaseModalProps> = ({
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white font-medium text-gray-900"
             >
               <option value="" disabled>
-                -- Choose Item / Spare Part --
+                -- Choose Inventory Item --
               </option>
               {items.map((it) => (
                 <option key={it.id} value={it.id}>
@@ -147,7 +147,7 @@ export const RecordPurchaseModal: React.FC<RecordPurchaseModalProps> = ({
                 type="text"
                 value={supplierName}
                 onChange={(e) => setSupplierName(e.target.value)}
-                placeholder="e.g. Apex Water Technologies"
+                placeholder="e.g. National Components & Supplies Ltd."
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               />
             </div>
@@ -212,7 +212,7 @@ export const RecordPurchaseModal: React.FC<RecordPurchaseModalProps> = ({
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Invoice #, batch number, warranty remarks..."
+              placeholder="e.g. Invoice #, batch number, delivery notes..."
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
             />
           </div>

@@ -123,17 +123,17 @@ export class ServicesRepository {
       const needsJoinsForCount = Boolean(filters.search?.trim());
       const countQuery = needsJoinsForCount
         ? database
-            .select({ count: sql<number>`count(*)` })
-            .from(services)
-            .leftJoin(customers, eq(services.customerId, customers.id))
-            .leftJoin(customerAssets, eq(services.assetId, customerAssets.id))
-            .leftJoin(products, eq(customerAssets.productId, products.id))
-            .leftJoin(technicians, eq(services.technicianId, technicians.id))
-            .where(whereClause)
+          .select({ count: sql<number>`count(*)` })
+          .from(services)
+          .leftJoin(customers, eq(services.customerId, customers.id))
+          .leftJoin(customerAssets, eq(services.assetId, customerAssets.id))
+          .leftJoin(products, eq(customerAssets.productId, products.id))
+          .leftJoin(technicians, eq(services.technicianId, technicians.id))
+          .where(whereClause)
         : database
-            .select({ count: sql<number>`count(*)` })
-            .from(services)
-            .where(whereClause);
+          .select({ count: sql<number>`count(*)` })
+          .from(services)
+          .where(whereClause);
 
       const [rows, countResult] = await Promise.all([
         database
@@ -170,6 +170,7 @@ export class ServicesRepository {
             jobCardId: jobCards.id,
             jobCardNumber: jobCards.jobCardNumber,
             jobCardStatus: jobCards.status,
+            jobCardTechnicianNotes: jobCards.technicianNotes,
             totalCharges: jobCards.totalCharges,
           })
           .from(services)
@@ -193,40 +194,40 @@ export class ServicesRepository {
       const linkedInvoices =
         serviceIds.length > 0
           ? await database
-              .select({
-                id: invoices.id,
-                serviceId: invoices.serviceId,
-                jobCardId: invoices.jobCardId,
-                invoiceNumber: invoices.invoiceNumber,
-                status: invoices.status,
-                totalAmount: invoices.totalAmount,
-                dueDate: invoices.dueDate,
-              })
-              .from(invoices)
-              .where(
-                and(
-                  inArray(invoices.serviceId, serviceIds),
-                  sql`${invoices.status} != 'CANCELLED'`
-                )
+            .select({
+              id: invoices.id,
+              serviceId: invoices.serviceId,
+              jobCardId: invoices.jobCardId,
+              invoiceNumber: invoices.invoiceNumber,
+              status: invoices.status,
+              totalAmount: invoices.totalAmount,
+              dueDate: invoices.dueDate,
+            })
+            .from(invoices)
+            .where(
+              and(
+                inArray(invoices.serviceId, serviceIds),
+                sql`${invoices.status} != 'CANCELLED'`
               )
+            )
           : [];
 
       const invoiceIds = linkedInvoices.map((inv) => inv.id);
       const invoicePayments =
         invoiceIds.length > 0
           ? await database
-              .select({
-                invoiceId: payments.invoiceId,
-                amount: payments.amount,
-                status: payments.status,
-              })
-              .from(payments)
-              .where(
-                and(
-                  inArray(payments.invoiceId, invoiceIds),
-                  eq(payments.status, 'COMPLETED')
-                )
+            .select({
+              invoiceId: payments.invoiceId,
+              amount: payments.amount,
+              status: payments.status,
+            })
+            .from(payments)
+            .where(
+              and(
+                inArray(payments.invoiceId, invoiceIds),
+                eq(payments.status, 'COMPLETED')
               )
+            )
           : [];
 
       const paidByInvoiceId = new Map<string, number>();
@@ -251,10 +252,10 @@ export class ServicesRepository {
             inv.status === 'CANCELLED'
               ? 'CANCELLED'
               : inv.status === 'PAID' || (outstanding <= 0.001 && paid > 0)
-              ? 'PAID'
-              : paid > 0
-              ? 'PARTIALLY_PAID'
-              : inv.status;
+                ? 'PAID'
+                : paid > 0
+                  ? 'PARTIALLY_PAID'
+                  : inv.status;
 
           return [
             inv.serviceId,
@@ -279,10 +280,10 @@ export class ServicesRepository {
           total <= 0
             ? 'FREE'
             : inv?.status === 'PAID' || (outstanding <= 0.001 && paid > 0)
-            ? 'PAID'
-            : paid > 0
-            ? 'PARTIALLY_PAID'
-            : 'PENDING';
+              ? 'PAID'
+              : paid > 0
+                ? 'PARTIALLY_PAID'
+                : 'PENDING';
 
         let techName = row.technicianName;
         let techPhone = row.technicianPhone;
@@ -362,10 +363,10 @@ export class ServicesRepository {
           totalAmount <= 0
             ? 'FREE'
             : memInv?.status === 'PAID' || (outstanding <= 0.001 && paid > 0)
-            ? 'PAID'
-            : paid > 0
-            ? 'PARTIALLY_PAID'
-            : 'PENDING';
+              ? 'PAID'
+              : paid > 0
+                ? 'PARTIALLY_PAID'
+                : 'PENDING';
 
         let techName = s.technicianName;
         let techPhone = s.technicianPhone;
@@ -377,8 +378,18 @@ export class ServicesRepository {
           }
         }
 
+        const linkedJc = memoryJobCards.find((j) => j.serviceId === s.id);
+        const jcNotes = linkedJc?.technicianNotes || (s as any).jobCardTechnicianNotes || (s as any).technicianNotes || null;
+        const jcStatus = linkedJc?.status || (s as any).jobCardStatus || null;
+        const jcId = linkedJc?.id || (s as any).jobCardId || null;
+        const jcNum = linkedJc?.jobCardNumber || (s as any).jobCardNumber || null;
+
         return {
           ...s,
+          jobCardId: jcId,
+          jobCardNumber: jcNum,
+          jobCardStatus: jcStatus,
+          jobCardTechnicianNotes: jcNotes,
           technicianName: techName,
           technicianPhone: techPhone,
           invoice: memInv || null,
@@ -486,11 +497,11 @@ export class ServicesRepository {
           serialNumber: asset?.serialNumber || '',
           invoice: memInv
             ? {
-                ...memInv,
-                paidAmount: memPaid.toFixed(2),
-                outstandingAmount: memOutstanding.toFixed(2),
-                payments: memPayments,
-              }
+              ...memInv,
+              paidAmount: memPaid.toFixed(2),
+              outstandingAmount: memOutstanding.toFixed(2),
+              payments: memPayments,
+            }
             : null,
           paidAmount: memPaid.toFixed(2),
           outstandingAmount: memOutstanding.toFixed(2),
@@ -498,10 +509,10 @@ export class ServicesRepository {
             memTotal <= 0
               ? 'FREE'
               : memOutstanding <= 0.001 && memPaid > 0
-              ? 'PAID'
-              : memPaid > 0
-              ? 'PARTIALLY_PAID'
-              : 'PENDING',
+                ? 'PAID'
+                : memPaid > 0
+                  ? 'PARTIALLY_PAID'
+                  : 'PENDING',
           payments: memPayments,
         };
       }
@@ -534,19 +545,19 @@ export class ServicesRepository {
 
       const linkedPayments = invoice
         ? await database
-            .select({
-              id: payments.id,
-              paymentNumber: payments.paymentNumber,
-              paymentDate: payments.paymentDate,
-              amount: payments.amount,
-              paymentMethod: payments.paymentMethod,
-              referenceNumber: payments.referenceNumber,
-              status: payments.status,
-              notes: payments.notes,
-            })
-            .from(payments)
-            .where(eq(payments.invoiceId, invoice.id))
-            .orderBy(desc(payments.paymentDate))
+          .select({
+            id: payments.id,
+            paymentNumber: payments.paymentNumber,
+            paymentDate: payments.paymentDate,
+            amount: payments.amount,
+            paymentMethod: payments.paymentMethod,
+            referenceNumber: payments.referenceNumber,
+            status: payments.status,
+            notes: payments.notes,
+          })
+          .from(payments)
+          .where(eq(payments.invoiceId, invoice.id))
+          .orderBy(desc(payments.paymentDate))
         : [];
 
       let allPayments = [...linkedPayments];
@@ -567,18 +578,18 @@ export class ServicesRepository {
         invoice?.status === 'CANCELLED'
           ? 'CANCELLED'
           : invoice?.status === 'PAID' || (outstandingAmount <= 0.001 && paidAmount > 0)
-          ? 'PAID'
-          : paidAmount > 0
-          ? 'PARTIALLY_PAID'
-          : invoice?.status || 'ISSUED';
+            ? 'PAID'
+            : paidAmount > 0
+              ? 'PARTIALLY_PAID'
+              : invoice?.status || 'ISSUED';
       const paymentStatus =
         totalAmountNum <= 0
           ? 'FREE'
           : invoice?.status === 'PAID' || computedInvoiceStatus === 'PAID' || (outstandingAmount <= 0.001 && paidAmount > 0)
-          ? 'PAID'
-          : paidAmount > 0
-          ? 'PARTIALLY_PAID'
-          : 'PENDING';
+            ? 'PAID'
+            : paidAmount > 0
+              ? 'PARTIALLY_PAID'
+              : 'PENDING';
 
       let techName = rows[0].technicianName;
       let techPhone = rows[0].technicianPhone;
@@ -596,12 +607,12 @@ export class ServicesRepository {
         technicianPhone: techPhone,
         invoice: invoice
           ? {
-              ...invoice,
-              status: computedInvoiceStatus,
-              paidAmount: paidAmount.toFixed(2),
-              outstandingAmount: outstandingAmount.toFixed(2),
-              payments: allPayments,
-            }
+            ...invoice,
+            status: computedInvoiceStatus,
+            paidAmount: paidAmount.toFixed(2),
+            outstandingAmount: outstandingAmount.toFixed(2),
+            payments: allPayments,
+          }
           : null,
         paidAmount: paidAmount.toFixed(2),
         outstandingAmount: outstandingAmount.toFixed(2),
@@ -640,12 +651,12 @@ export class ServicesRepository {
         serialNumber: asset?.serialNumber || '',
         invoice: memInv
           ? {
-              ...memInv,
-              status: memInv.status === 'PAID' || (memOutstanding <= 0.001 && memPaid > 0) ? 'PAID' : memInv.status,
-              paidAmount: memPaid.toFixed(2),
-              outstandingAmount: memOutstanding.toFixed(2),
-              payments: memPayments,
-            }
+            ...memInv,
+            status: memInv.status === 'PAID' || (memOutstanding <= 0.001 && memPaid > 0) ? 'PAID' : memInv.status,
+            paidAmount: memPaid.toFixed(2),
+            outstandingAmount: memOutstanding.toFixed(2),
+            payments: memPayments,
+          }
           : null,
         paidAmount: memPaid.toFixed(2),
         outstandingAmount: memOutstanding.toFixed(2),
@@ -653,10 +664,10 @@ export class ServicesRepository {
           memTotal <= 0
             ? 'FREE'
             : memInv?.status === 'PAID' || (memOutstanding <= 0.001 && memPaid > 0)
-            ? 'PAID'
-            : memPaid > 0
-            ? 'PARTIALLY_PAID'
-            : 'PENDING',
+              ? 'PAID'
+              : memPaid > 0
+                ? 'PARTIALLY_PAID'
+                : 'PENDING',
         payments: memPayments,
       };
     }
@@ -744,8 +755,8 @@ export class ServicesRepository {
         const date_str = rawDate instanceof Date
           ? rawDate.toISOString().split('T')[0]
           : typeof rawDate === 'string'
-          ? rawDate.split('T')[0]
-          : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            ? rawDate.split('T')[0]
+            : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
         if (!map.has(date_str)) {
           map.set(date_str, {
@@ -942,8 +953,133 @@ export class ServicesRepository {
     // 2. Resolve Customer Machine / Asset
     let finalAssetId = input.assetId && UUID_REGEX.test(input.assetId.trim()) ? input.assetId.trim() : null;
     let resolvedAsset: any = null;
+    const requestedMachineName = (input as any).machineName?.trim() || '';
 
-    if (finalAssetId) {
+    // If admin explicitly provided a machine name at schedule time
+    if (requestedMachineName) {
+      try {
+        const custAssets = await db
+          .select({
+            id: customerAssets.id,
+            customerId: customerAssets.customerId,
+            customName: customerAssets.customName,
+            assetNumber: customerAssets.assetNumber,
+            productName: products.name,
+          })
+          .from(customerAssets)
+          .leftJoin(products, eq(customerAssets.productId, products.id))
+          .where(eq(customerAssets.customerId, customerId));
+
+        const matched = custAssets.find(
+          (ca) =>
+            (ca.customName && ca.customName.toLowerCase() === requestedMachineName.toLowerCase()) ||
+            (ca.productName && ca.productName.toLowerCase() === requestedMachineName.toLowerCase())
+        );
+        if (matched) {
+          resolvedAsset = matched;
+          finalAssetId = matched.id;
+        } else {
+          // If customer has a placeholder asset (e.g. "Customer RO Water Purifier", "RO Machine", or null), update its name
+          const placeholderAsset = custAssets.find(
+            (ca) =>
+              !ca.customName ||
+              ca.customName.toLowerCase() === 'customer ro water purifier' ||
+              ca.customName.toLowerCase() === 'ro machine'
+          );
+          if (placeholderAsset) {
+            try {
+              await db
+                .update(customerAssets)
+                .set({ customName: requestedMachineName, updatedAt: new Date() })
+                .where(eq(customerAssets.id, placeholderAsset.id));
+              placeholderAsset.customName = requestedMachineName;
+              resolvedAsset = placeholderAsset;
+              finalAssetId = placeholderAsset.id;
+            } catch (updErr) {
+              console.warn('[ServicesRepository.createService] Notice updating placeholder asset:', updErr);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[ServicesRepository.createService] Matching asset query notice:', err);
+      }
+
+      if (!resolvedAsset) {
+        const memMatched = memoryAssets.find(
+          (a) =>
+            a.customerId === customerId &&
+            ((a.customName && a.customName.toLowerCase() === requestedMachineName.toLowerCase()) ||
+              (a.productName && a.productName.toLowerCase() === requestedMachineName.toLowerCase()))
+        );
+        if (memMatched) {
+          resolvedAsset = memMatched;
+          finalAssetId = memMatched.id;
+        }
+      }
+
+      // If no matching existing asset for this customer, provision a new customer asset with this custom machine name
+      if (!resolvedAsset) {
+        const newAssetId = randomUUID();
+        try {
+          let [defaultProduct] = await db.select().from(products).limit(1);
+          if (!defaultProduct) {
+            const [newProd] = await db
+              .insert(products)
+              .values({
+                name: requestedMachineName,
+                sku: `SKU-${Date.now().toString().slice(-6)}`,
+                productType: 'RO_MACHINE',
+                brand: 'AquaPure',
+                model: requestedMachineName,
+                unitPrice: '15000.00',
+                taxRatePercent: '18.00',
+                defaultWarrantyMonths: 12,
+                defaultServiceIntervalMonths: 6,
+                isActive: true,
+              })
+              .returning();
+            defaultProduct = newProd;
+          }
+
+          const assetSeq = await generateBusinessNumber(db, 'ASSET', 'AST');
+          const [newAsset] = await db
+            .insert(customerAssets)
+            .values({
+              id: newAssetId,
+              assetNumber: assetSeq.sequenceNumber,
+              customerId: customerId,
+              productId: defaultProduct.id,
+              customName: requestedMachineName,
+              assetType: 'RO_MACHINE',
+              status: 'ACTIVE',
+              purchaseDate: new Date(),
+            })
+            .returning();
+
+          resolvedAsset = newAsset;
+          finalAssetId = newAsset.id;
+        } catch (assetErr) {
+          console.warn('[ServicesRepository.createService] Custom machine asset creation DB notice, using memory fallback:', assetErr);
+          const memAsset = {
+            id: newAssetId,
+            assetNumber: `AST-${Date.now().toString().slice(-4)}`,
+            customerId: customerId,
+            productId: '00000000-0000-0000-0000-000000000001',
+            customName: requestedMachineName,
+            assetType: 'RO_MACHINE',
+            status: 'ACTIVE',
+            purchaseDate: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          memoryAssets.unshift(memAsset);
+          resolvedAsset = memAsset;
+          finalAssetId = memAsset.id;
+        }
+      }
+    }
+
+    if (!resolvedAsset && finalAssetId) {
       try {
         const [directAsset] = await db
           .select()
@@ -953,7 +1089,7 @@ export class ServicesRepository {
         if (directAsset && directAsset.customerId === customerId) {
           resolvedAsset = directAsset;
         }
-      } catch {}
+      } catch { }
 
       if (!resolvedAsset) {
         const memDirect = memoryAssets.find((a) => a.id === finalAssetId && a.customerId === customerId);
@@ -976,7 +1112,7 @@ export class ServicesRepository {
           resolvedAsset = existingCustAssets[0];
           finalAssetId = resolvedAsset.id;
         }
-      } catch {}
+      } catch { }
 
       if (!resolvedAsset) {
         const memCustAssets = memoryAssets.filter((a) => a.customerId === customerId);
@@ -1018,7 +1154,7 @@ export class ServicesRepository {
               assetNumber: assetSeq.sequenceNumber,
               customerId: customerId,
               productId: defaultProduct.id,
-              customName: 'Customer RO Water Purifier',
+              customName: requestedMachineName || 'RO Machine',
               assetType: 'RO_MACHINE',
               status: 'ACTIVE',
               purchaseDate: new Date(),
@@ -1034,7 +1170,7 @@ export class ServicesRepository {
             assetNumber: `AST-${Date.now().toString().slice(-4)}`,
             customerId: customerId,
             productId: '00000000-0000-0000-0000-000000000001',
-            customName: 'Customer RO Water Purifier',
+            customName: requestedMachineName || 'RO Machine',
             assetType: 'RO_MACHINE',
             status: 'ACTIVE',
             purchaseDate: new Date(),
@@ -1295,6 +1431,22 @@ export class ServicesRepository {
     if (input.assetId !== undefined) {
       updateData.assetId = input.assetId || null;
     }
+    const requestedMachineName = (input as any).machineName?.trim();
+    if (requestedMachineName) {
+      const targetAssetId = updateData.assetId || existing.assetId;
+      if (targetAssetId) {
+        try {
+          await database
+            .update(customerAssets)
+            .set({ customName: requestedMachineName, updatedAt: new Date() })
+            .where(eq(customerAssets.id, targetAssetId));
+        } catch (dbErr: any) {
+          console.warn('[ServicesRepository.updateService] Notice updating asset customName:', dbErr?.message);
+        }
+        const memAst = memoryAssets.find((a) => a.id === targetAssetId);
+        if (memAst) memAst.customName = requestedMachineName;
+      }
+    }
     if (input.warrantyId !== undefined) {
       updateData.warrantyId = input.warrantyId || null;
     }
@@ -1393,7 +1545,7 @@ export class ServicesRepository {
         beforeState: existing,
         afterState: updated,
       });
-    } catch {}
+    } catch { }
 
     const richService = await this.findById(id, database);
     return richService || updated;
@@ -1580,7 +1732,7 @@ export class ServicesRepository {
           totalCharges: input.totalCharges || 0,
         },
       });
-    } catch {}
+    } catch { }
 
     // 4. Invoicing and billing synchronization
     let serviceInvoice: any = null;

@@ -103,7 +103,7 @@ export const RentalsPage: React.FC = () => {
       {/* 1. Global Page Header */}
       <PageHeader
         title="Rent Management"
-        description="Manage recurring RO water purifier machine rentals, track monthly payments, schedule machine maintenance, and handle returns."
+        description="Manage recurring equipment and product rentals, track monthly payments, schedule maintenance, and handle returns."
         actions={
           <div className="flex items-center gap-2.5">
             <Button
@@ -245,7 +245,7 @@ export const RentalsPage: React.FC = () => {
           <div className="flex items-center gap-2.5 flex-wrap">
             <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
               <Filter className="w-3.5 h-3.5 text-slate-400" />
-              <span>Machine:</span>
+              <span>Type:</span>
               <select
                 value={machineTypeFilter}
                 onChange={(e) => {
@@ -255,10 +255,12 @@ export const RentalsPage: React.FC = () => {
                 className="px-2 py-1 text-xs bg-slate-50 border border-slate-300 rounded-lg outline-none cursor-pointer"
               >
                 <option value="ALL">All Types</option>
-                <option value="RO">RO</option>
-                <option value="RO + UV">RO + UV</option>
-                <option value="RO + UV + UF">RO + UV + UF</option>
-                <option value="Commercial RO">Commercial RO</option>
+                <option value="STANDARD">Standard Equipment</option>
+                <option value="PREMIUM">Premium Unit</option>
+                <option value="COMMERCIAL">Commercial Unit</option>
+                <option value="HEAVY_DUTY">Heavy Duty Unit</option>
+                <option value="PORTABLE">Portable / Compact Unit</option>
+                <option value="CUSTOM">Custom Product / Equipment</option>
               </select>
             </div>
 
@@ -310,7 +312,7 @@ export const RentalsPage: React.FC = () => {
                 <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-600 font-semibold text-[11px] uppercase tracking-wider">
                   <th className="py-3 px-4">Agreement</th>
                   <th className="py-3 px-4">Customer Details</th>
-                  <th className="py-3 px-4">Rented Machine</th>
+                  <th className="py-3 px-4">Rented Equipment / Product</th>
                   <th className="py-3 px-4 font-mono text-right">Monthly Rent</th>
                   <th className="py-3 px-4">Deposit</th>
                   <th className="py-3 px-4">Status</th>
@@ -414,7 +416,7 @@ export const RentalsPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setSelectedRentalForReturn(rental)}
-                            title="Return Machine"
+                            title="Return Equipment / Item"
                             className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                           >
                             <RotateCcw className="w-4 h-4" />

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, timestamp, index, doublePrecision } from 'drizzle-orm/pg-core';
 import { customerTypeEnum, customerStatusEnum, customerLabelEnum, addressTypeEnum } from './enums';
 import { users } from './users';
 
@@ -71,6 +71,8 @@ export const customerAddresses = pgTable(
     city: text('city').default('').notNull(),
     state: text('state').default('').notNull(),
     postalCode: text('postal_code').default('').notNull(),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
     isDefault: boolean('is_default').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),

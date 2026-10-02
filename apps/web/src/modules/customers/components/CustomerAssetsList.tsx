@@ -28,7 +28,7 @@ export const CustomerAssetsList: React.FC<CustomerAssetsListProps> = ({ customer
       <EmptyState
         icon={<Droplets className="w-6 h-6 text-slate-400" />}
         title="No assets registered"
-        description="This customer currently has no water purifier units or serialized spare parts registered in the CRM."
+        description="This customer currently has no product units or serialized items registered in the CRM."
       />
     );
   }
@@ -49,7 +49,7 @@ export const CustomerAssetsList: React.FC<CustomerAssetsListProps> = ({ customer
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-slate-900">
-                      {asset.customName || (asset as any).product?.name || asset.productName || 'Water Purifier Asset'}
+                      {asset.customName || (asset as any).product?.name || asset.productName || 'Product Asset'}
                     </h4>
                     <span className="text-xs text-slate-500 font-mono">
                       SKU: {(asset as any).product?.sku || asset.productSku || 'N/A'} {(asset as any).product?.brand || asset.productBrand ? `• ${(asset as any).product?.brand || asset.productBrand}` : ''}

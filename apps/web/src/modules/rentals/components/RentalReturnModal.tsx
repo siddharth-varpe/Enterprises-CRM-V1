@@ -29,7 +29,7 @@ export const RentalReturnModal: React.FC<RentalReturnModalProps> = ({
   const [damageCharges, setDamageCharges] = useState<number>(0);
   const [depositAdjustment, setDepositAdjustment] = useState<number>(0);
   const [refundAmount, setRefundAmount] = useState<number>(depositHeld);
-  const [returnNotes, setReturnNotes] = useState<string>('Machine physically returned and verified in warehouse.');
+  const [returnNotes, setReturnNotes] = useState<string>('');
 
   // Recalculate default refund if deposit changes
   React.useEffect(() => {
@@ -64,13 +64,13 @@ export const RentalReturnModal: React.FC<RentalReturnModalProps> = ({
       });
 
       toast.success(
-        `Machine ${rental.machineModel} (Serial: ${rental.serialNumber}) marked as RETURNED. Refund: ${formatINR(refundAmount)}.`,
-        'Machine Returned'
+        `Equipment ${rental.machineModel} (Serial: ${rental.serialNumber}) marked as RETURNED. Refund: ${formatINR(refundAmount)}.`,
+        'Equipment Returned'
       );
       onSuccess?.();
       onClose();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to record machine return', 'Return Error');
+      toast.error(err.message || 'Failed to record equipment return', 'Return Error');
     }
   };
 
@@ -79,7 +79,7 @@ export const RentalReturnModal: React.FC<RentalReturnModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       size="md"
-      title="Return Rented Machine"
+      title="Return Rented Equipment"
       description={`Record return & deposit settlement for ${rental.rentalNumber}`}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -103,7 +103,7 @@ export const RentalReturnModal: React.FC<RentalReturnModalProps> = ({
         {/* Return Date */}
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1">
-            Machine Return Date <span className="text-rose-500">*</span>
+            Return Date <span className="text-rose-500">*</span>
           </label>
           <input
             type="date"
@@ -116,7 +116,7 @@ export const RentalReturnModal: React.FC<RentalReturnModalProps> = ({
         {/* Return Condition */}
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1">
-            Machine Physical Condition upon Return <span className="text-rose-500">*</span>
+            Physical Condition upon Return <span className="text-rose-500">*</span>
           </label>
           <select
             value={returnCondition}
@@ -127,8 +127,8 @@ export const RentalReturnModal: React.FC<RentalReturnModalProps> = ({
               Good Condition — Complete with Accessories
             </option>
             <option value="Minor Scratches / Normal Wear & Tear">Minor Scratches / Normal Wear &amp; Tear</option>
-            <option value="Missing Accessories (Pre-filter / Pipe)">Missing Accessories (Pre-filter / Pipe)</option>
-            <option value="Filter Exhausted / Needs Full Sanitization">Filter Exhausted / Needs Full Sanitization</option>
+            <option value="Missing Accessories / Cables / Parts">Missing Accessories / Cables / Parts</option>
+            <option value="Requires Servicing / Maintenance">Requires Servicing / Maintenance</option>
             <option value="Damaged Housing / Parts Broken">Damaged Housing / Parts Broken</option>
           </select>
         </div>
@@ -174,7 +174,7 @@ export const RentalReturnModal: React.FC<RentalReturnModalProps> = ({
           <label className="block text-xs font-bold text-slate-700 mb-1">Return Notes / Handover Remarks</label>
           <input
             type="text"
-            placeholder="e.g. Unit inspected, deposit refunded via UPI to customer."
+            placeholder="e.g. Equipment inspected and verified upon return, deposit settled."
             value={returnNotes}
             onChange={(e) => setReturnNotes(e.target.value)}
             className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl outline-none"
@@ -192,7 +192,7 @@ export const RentalReturnModal: React.FC<RentalReturnModalProps> = ({
             isLoading={returnRentalMutation.isPending}
             className="px-6 shadow-md"
           >
-            Confirm Machine Return
+            Confirm Equipment Return
           </Button>
         </div>
       </form>

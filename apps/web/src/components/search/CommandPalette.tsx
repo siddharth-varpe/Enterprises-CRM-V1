@@ -233,7 +233,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onNavigate }) =>
             <span>Select:</span>
             <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-200 font-mono shadow-2xs">Enter</kbd>
           </div>
-          <span className="font-semibold text-slate-600">SR Enterprises CRM</span>
+          <span className="font-semibold text-slate-600">Enterprises CRM</span>
         </div>
       </div>
     </div>

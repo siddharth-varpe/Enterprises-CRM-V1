@@ -38,7 +38,7 @@ export function sendInvoiceViaWhatsApp({
   const orderId = orderNumber || invoiceNumber || 'Order';
   const invNumber = invoiceNumber || orderNumber || 'Invoice';
   const invoiceKey = invoiceId || invoiceNumber || orderNumber || '';
-  const company = companyName?.trim() || 'SR Enterprises';
+  const company = companyName?.trim() || 'Enterprises CRM';
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const viewUrl = publicUrl || (origin && invoiceKey ? `${origin}/invoice/view/${encodeURIComponent(invoiceKey)}` : '');

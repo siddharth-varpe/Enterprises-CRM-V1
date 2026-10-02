@@ -42,6 +42,7 @@ export const ScheduleServiceModal: React.FC<ScheduleServiceModalProps> = ({
   initialAssetId,
 }) => {
   const [customerSearch, setCustomerSearch] = useState('');
+  const [machineName, setMachineName] = useState('');
   const [formData, setFormData] = useState<Partial<CreateServiceInput>>({
     customerId: initialCustomerId || initialCustomer?.id || '',
     assetId: initialAssetId || '',
@@ -78,6 +79,7 @@ export const ScheduleServiceModal: React.FC<ScheduleServiceModalProps> = ({
         scheduledDate: initialDate || getSystemDateString(),
         scheduledTimeSlot: prev.scheduledTimeSlot || '10:00 AM - 12:00 PM',
       }));
+      setMachineName('');
       setCustomerSearch('');
       setFormError(null);
     }
@@ -151,7 +153,7 @@ export const ScheduleServiceModal: React.FC<ScheduleServiceModalProps> = ({
       if (a && a.id) {
         map.set(a.id, {
           id: a.id,
-          productName: a.customName || a.product?.name || a.productName || 'RO Purifier / Spare',
+          productName: a.customName || a.product?.name || a.productName || 'Product / Spare',
           productBrand: a.product?.brand || a.productBrand || '',
           productSku: a.product?.sku || a.productSku || '',
           serialNumber: a.serialNumber || '',
@@ -166,7 +168,7 @@ export const ScheduleServiceModal: React.FC<ScheduleServiceModalProps> = ({
         map.set(a.id, {
           ...existing,
           ...a,
-          productName: a.customName || a.productName || (a as any).product?.name || existing?.productName || 'RO Purifier / Spare',
+          productName: a.customName || a.productName || (a as any).product?.name || existing?.productName || 'Product / Spare',
           productBrand: a.productBrand || (a as any).product?.brand || existing?.productBrand || '',
           productSku: a.productSku || (a as any).product?.sku || existing?.productSku || '',
         });
@@ -175,18 +177,12 @@ export const ScheduleServiceModal: React.FC<ScheduleServiceModalProps> = ({
     return Array.from(map.values());
   }, [formData.customerId, assetsData, customerDetail]);
 
-  // Auto-select asset when customer assets load
-  useEffect(() => {
-    if (formData.customerId) {
-      if (initialAssetId && assetList.some((a) => a.id === initialAssetId)) {
-        setFormData((prev) => ({ ...prev, assetId: initialAssetId }));
-      } else if (assetList.length > 0 && (!formData.assetId || formData.assetId === 'DEFAULT_RO_PURIFIER')) {
-        setFormData((prev) => ({ ...prev, assetId: assetList[0].id }));
-      } else if (assetList.length === 0 && !isLoadingAssets) {
-        setFormData((prev) => ({ ...prev, assetId: 'DEFAULT_RO_PURIFIER' }));
-      }
-    }
-  }, [formData.customerId, assetList, isLoadingAssets, initialAssetId]);
+  const cleanAssetSuggestions = React.useMemo(() => {
+    return assetList.filter((a) => {
+      const name = (a.productName || a.customName || '').trim().toLowerCase();
+      return name && name !== 'customer ro water purifier';
+    });
+  }, [assetList]);
 
   const handleCustomerChange = (custId: string) => {
     setFormData((prev) => ({
@@ -194,6 +190,7 @@ export const ScheduleServiceModal: React.FC<ScheduleServiceModalProps> = ({
       customerId: custId,
       assetId: '',
     }));
+    setMachineName('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,18 +210,31 @@ export const ScheduleServiceModal: React.FC<ScheduleServiceModalProps> = ({
       return;
     }
 
-    const effectiveAssetId =
-      formData.assetId && formData.assetId !== 'DEFAULT_RO_PURIFIER'
-        ? formData.assetId
-        : assetList.length > 0
-        ? assetList[0].id
-        : null;
+    const trimmedMachine = machineName.trim();
+    let effectiveAssetId: string | null = null;
+
+    if (trimmedMachine && assetList.length > 0) {
+      const matched = assetList.find(
+        (a) =>
+          (a.productName && a.productName.toLowerCase() === trimmedMachine.toLowerCase()) ||
+          (a.customName && a.customName.toLowerCase() === trimmedMachine.toLowerCase())
+      );
+      if (matched) {
+        effectiveAssetId = matched.id;
+      }
+    }
+
+    // Only fallback to formData.assetId if the user did NOT enter a machine name
+    if (!trimmedMachine && !effectiveAssetId && formData.assetId && formData.assetId !== 'DEFAULT_RO_PURIFIER') {
+      effectiveAssetId = formData.assetId;
+    }
 
     setIsSubmitting(true);
     try {
       const res = await createMutation.mutateAsync({
         customerId: formData.customerId,
         assetId: effectiveAssetId,
+        machineName: trimmedMachine || undefined,
         serviceType: formData.serviceType || 'PERIODIC_MAINTENANCE',
         serviceLocation: formData.serviceLocation || 'DOORSTEP',
         serviceClassification: formData.serviceClassification || 'GENERAL',
@@ -333,64 +343,82 @@ export const ScheduleServiceModal: React.FC<ScheduleServiceModalProps> = ({
           />
         </div>
 
-        {/* 2. Machine / Purchased Item Selection */}
+        {/* 2. Machine / Equipment Name Input Field */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
               <Cpu className="w-3.5 h-3.5 text-slate-500" />
-              Select Customer's Machine / Purchased Product <span className="text-rose-500">*</span>
+              Product / Equipment Name
             </label>
-            {formData.customerId && (
+            {formData.customerId && assetList.length > 0 && (
               <span className="text-[11px] font-medium text-slate-500">
-                {isLoadingAssets
-                  ? 'Loading...'
-                  : assetList.length > 0
-                  ? `${assetList.length} registered item(s) found`
-                  : 'Customer machine auto-provisioned'}
+                {assetList.length} registered item(s) on file
               </span>
             )}
           </div>
 
-          <Select
-            options={
-              !formData.customerId
-                ? [
-                    {
-                      value: '',
-                      label: '— Select customer above first to view their purchased items —',
-                    },
-                  ]
-                : isLoadingAssets
-                ? [
-                    {
-                      value: '',
-                      label: 'Loading customer machines & spares...',
-                    },
-                  ]
-                : assetList.length === 0
-                ? [
-                    {
-                      value: 'DEFAULT_RO_PURIFIER',
-                      label: '— Default RO Water Purifier (General Maintenance Visit) —',
-                    },
-                  ]
-                : [
-                    {
-                      value: '',
-                      label: `— Choose Customer Machine / Spare (${assetList.length} available) —`,
-                    },
-                    ...assetList.map((a) => ({
-                      value: a.id,
-                      label: `${a.productName || a.customName || 'Product'} ${
-                        a.serialNumber ? `(SN: ${a.serialNumber})` : ''
-                      } ${a.assetType ? `[${a.assetType.replace('_', ' ')}]` : ''} - ${a.assetNumber}`,
-                    })),
-                  ]
-            }
-            value={formData.assetId || (assetList.length === 0 && formData.customerId ? 'DEFAULT_RO_PURIFIER' : '')}
-            onChange={(e) => setFormData((prev) => ({ ...prev, assetId: e.target.value }))}
-            disabled={!formData.customerId || isLoadingAssets}
-          />
+          <div className="relative">
+            <Input
+              type="text"
+              list="customer-machine-suggestions"
+              placeholder={
+                !formData.customerId
+                  ? 'Select customer above first, or enter product / machine name directly...'
+                  : 'Enter machine name / product equipment...'
+              }
+              value={machineName}
+              onChange={(e) => {
+                const val = e.target.value;
+                setMachineName(val);
+                const matched = assetList.find(
+                  (a) =>
+                    (a.productName && a.productName.toLowerCase() === val.trim().toLowerCase()) ||
+                    (a.customName && a.customName.toLowerCase() === val.trim().toLowerCase())
+                );
+                setFormData((prev) => ({
+                  ...prev,
+                  assetId: matched ? matched.id : '',
+                }));
+              }}
+            />
+
+            <datalist id="customer-machine-suggestions">
+              {cleanAssetSuggestions.map((a) => (
+                <option
+                  key={a.id}
+                  value={a.productName || a.customName || 'RO Machine'}
+                >
+                  {a.serialNumber ? `SN: ${a.serialNumber}` : a.assetNumber || ''}
+                </option>
+              ))}
+            </datalist>
+          </div>
+
+          {/* Quick select chips if customer has registered machines */}
+          {formData.customerId && cleanAssetSuggestions.length > 0 && !machineName && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="text-[11px] text-slate-400">Quick select:</span>
+              {cleanAssetSuggestions.slice(0, 4).map((a) => {
+                const label = a.productName || a.customName || 'RO Machine';
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => {
+                      setMachineName(label);
+                      setFormData((prev) => ({ ...prev, assetId: a.id }));
+                    }}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 hover:bg-primary-50 hover:text-primary-700 hover:border-primary-200 border border-slate-200 text-[11px] font-medium text-slate-600 transition-colors cursor-pointer"
+                  >
+                    <span>{label}</span>
+                    {a.serialNumber && (
+                      <span className="text-slate-400 font-mono text-[10px]">({a.serialNumber})</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* 3. Service Type, Location & Classification */}

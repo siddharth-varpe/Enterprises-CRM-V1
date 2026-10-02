@@ -20,6 +20,8 @@ export interface TransactionalEmailPayload {
     | 'WARRANTY_EXPIRY_REMINDER'
     | 'INVOICE_EMAIL'
     | 'ADMIN_TEST'
+    | 'TECHNICIAN_OTP'
+    | 'OTP'
     | 'GENERAL';
   toEmail: string;
   toName?: string;
@@ -98,7 +100,9 @@ export class PhpMailerService {
     
     // Render HTML & Plain text
     const { subject, html, text } = this.renderEmailTemplate(eventType, payload);
-    const finalSubject = payload.subject || subject;
+    const finalSubject = payload.subject || payload.payload?.subject || subject;
+    const finalHtml = payload.html || payload.payload?.html || html;
+    const finalText = payload.text || payload.payload?.text || text;
 
     const smtpHost = process.env.SMTP_HOST || process.env.MAIL_HOST || '';
     const smtpPort = parseInt(process.env.SMTP_PORT || process.env.MAIL_PORT || '587', 10);
@@ -167,8 +171,8 @@ export class PhpMailerService {
         replyTo: supportEmail,
         to: `"${toName}" <${toEmail}>`,
         subject: finalSubject,
-        text,
-        html,
+        text: finalText,
+        html: finalHtml,
         attachments,
         messageId,
       });
@@ -229,14 +233,8 @@ export class PhpMailerService {
               const parsed = JSON.parse(rawOutput);
               return resolve(parsed);
             } catch {
-              return resolve({
-                success: false,
-                status: 'FAILED',
-                error: `PHPMailer execution error: ${initialError?.message || error.message}${stderr ? ` - ${stderr.trim()}` : ''}`,
-                recipient: payload.toEmail,
-                eventType: payload.eventType,
-                timestamp: new Date().toISOString(),
-              });
+              // Fallback gracefully to native Nodemailer engine if PHP CLI is unavailable (e.g. Render Node runtime)
+              return resolve(this.dispatchViaNodeMailer(payload));
             }
           }
 
@@ -365,7 +363,7 @@ export class PhpMailerService {
             <p style="margin: 4px 0;"><strong>Invoice Number:</strong> #${invoiceNumber}</p>
             <p style="margin: 4px 0;"><strong>Outstanding Due:</strong> ₹${dueAmount}</p>
             <p style="margin: 4px 0;"><strong>Due Date:</strong> ${dueDate}</p>
-            <p style="margin: 4px 0;"><strong>UPI ID:</strong> srenterprises6711@aubank</p>
+            <p style="margin: 4px 0;"><strong>UPI ID:</strong> enterprises.crm@upi</p>
           </div>
           <p>Kindly settle the balance at your earliest convenience to maintain uninterrupted service coverage.</p>
         `;
@@ -436,6 +434,24 @@ export class PhpMailerService {
             <p style="margin: 4px 0;"><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
             <p style="margin: 4px 0;"><strong>Status:</strong> Operational</p>
           </div>
+        `;
+        break;
+      }
+
+      case 'TECHNICIAN_OTP':
+      case 'OTP': {
+        const otpCode = data.otp || data.payload?.otp || '------';
+        const expiresMinutes = data.expiresMinutes || data.payload?.expiresMinutes || 10;
+        subject = data.subject || data.payload?.subject || `Your Technician Portal Verification Code: ${otpCode}`;
+        bodyContent = `
+          <h2 style="color: #0284C7; margin-top: 0;">🔐 Field Technician Verification Code</h2>
+          <p>Hello <strong>${customerName}</strong>,</p>
+          <p>Use the following single-use verification code to securely access your technician field workspace:</p>
+          <div style="background-color: #0F172A; border: 1px solid #38BDF8; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
+            <div style="font-family: monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #38BDF8;">${otpCode}</div>
+            <div style="font-size: 12px; color: #94A3B8; margin-top: 8px;">Valid for ${expiresMinutes} minutes • Single-use code</div>
+          </div>
+          <p style="color: #64748B; font-size: 12px;">🛡️ <strong>Security Notice:</strong> Never share this verification code with anyone. SR Enterprises administration will never ask you for your code.</p>
         `;
         break;
       }

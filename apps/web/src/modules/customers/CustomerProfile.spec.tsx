@@ -171,8 +171,8 @@ describe('CustomerProfile Component', () => {
     renderComponent();
     expect(screen.getAllByText('Rajesh Kumar').length).toBeGreaterThan(0);
     expect(screen.getAllByText('CUST-2026-0001').length).toBeGreaterThan(0);
-    expect(screen.getByText('9826123456')).toBeInTheDocument();
-    expect(screen.getByText('rajesh@example.com')).toBeInTheDocument();
+    expect(screen.getAllByText('9826123456').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('rajesh@example.com').length).toBeGreaterThan(0);
   });
 
   it('renders authoritative financial summary panel on right side', () => {
@@ -222,5 +222,18 @@ describe('CustomerProfile Component', () => {
     expect(screen.getAllByText(/Periodic Maintenance/i).length).toBeGreaterThan(0);
     expect(screen.getByText('Suresh Verma')).toBeInTheDocument();
     expect(screen.getByText('Under Warranty')).toBeInTheDocument();
+  });
+
+  it('renders genuine customer data in Communication card and does not contain dummy values', () => {
+    renderComponent();
+    expect(screen.getByText('Communication')).toBeInTheDocument();
+    // Genuine customer data present
+    expect(screen.getAllByText('rajesh@example.com').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('9826123456').length).toBeGreaterThan(0);
+    // Dummy placeholders strictly removed
+    expect(screen.queryByText('rahul.patil@example.com')).not.toBeInTheDocument();
+    expect(screen.queryByText('+91 98765 43210')).not.toBeInTheDocument();
+    expect(screen.queryByText(/tel:\s*9826123456/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('↑ 12.5% vs last year')).not.toBeInTheDocument();
   });
 });

@@ -4,6 +4,7 @@ import {
   TechnicianQueryFilterSchema,
   CreateTechnicianSchema,
   UpdateTechnicianSchema,
+  TogglePortalAccessSchema,
 } from '@crm/validation';
 import { requirePermission } from '../../middleware/rbac';
 import { authenticate } from '../../middleware/auth';
@@ -51,6 +52,30 @@ export const techniciansRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   /**
+   * GET /api/v1/technicians/:id/360
+   * Get dedicated Admin-side 360° Technician Profile
+   * Live aggregated from authoritative CRM records (identity, portal access, services, job cards, customers, assets, parts, payments)
+   */
+  fastify.get('/:id/360', { preHandler: [requirePermission('services.view')] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      const profile = await techniciansService.getTechnician360Profile(id);
+      return reply.send({
+        success: true,
+        data: profile,
+      });
+    } catch (err: any) {
+      return reply.status(404).send({
+        success: false,
+        error: {
+          code: 'TECHNICIAN_NOT_FOUND',
+          message: err?.message || 'Technician not found',
+        },
+      });
+    }
+  });
+
+  /**
    * POST /api/v1/technicians
    * Create a new technician
    */
@@ -78,6 +103,23 @@ export const techniciansRoutes: FastifyPluginAsync = async (fastify) => {
       success: true,
       data: updated,
       message: 'Technician updated successfully',
+    });
+  });
+
+  /**
+   * PATCH /api/v1/technicians/:id/portal-access
+   * Enable or disable Technician Portal access for an individual technician
+   * Authoritative administrative control guarded by users.manage permission
+   */
+  fastify.patch('/:id/portal-access', { preHandler: [requirePermission('users.manage')] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = TogglePortalAccessSchema.parse(request.body);
+    const user = (request as any).user;
+    const result = await techniciansService.togglePortalAccess(id, body.portalEnabled, user?.id);
+    return reply.send({
+      success: true,
+      data: result,
+      message: result.message,
     });
   });
 
