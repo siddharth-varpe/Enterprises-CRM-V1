@@ -60,7 +60,7 @@ $mailerVersion = \PHPMailer\PHPMailer\PHPMailer::VERSION;
                 </tr>
                 <tr>
                     <th>SMTP Port & Secure Mode</th>
-                    <td>Port <?php echo htmlspecialchars(getenv('SMTP_PORT') ?: '587'); ?> (<?php echo htmlspecialchars(getenv('SMTP_SECURE') ?: 'TLS'); ?>)</td>
+                    <td>Port <?php echo htmlspecialchars(getenv('SMTP_PORT') ?: '465'); ?> (<?php echo htmlspecialchars(getenv('SMTP_SECURE') ?: 'SSL'); ?>)</td>
                 </tr>
                 <tr>
                     <th>Sender Identity</th>

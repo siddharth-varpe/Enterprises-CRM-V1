@@ -87,7 +87,20 @@ export class PhpMailerService {
     }
 
     // Direct dispatch via existing PHPMailer CLI engine
-    return this.dispatchViaPhpCli(payload);
+    const phpResult = await this.dispatchViaPhpCli(payload);
+    if (phpResult.success || phpResult.status === 'SKIPPED') {
+      return phpResult;
+    }
+
+    // Graceful fallback: If PHP CLI fails, attempt direct dispatch via NodeMailer
+    try {
+      const nodeResult = await this.dispatchViaNodeMailer(payload);
+      if (nodeResult.success) {
+        return nodeResult;
+      }
+    } catch {}
+
+    return phpResult;
   }
 
   /**
@@ -104,8 +117,8 @@ export class PhpMailerService {
     const finalHtml = payload.html || payload.payload?.html || html;
     const finalText = payload.text || payload.payload?.text || text;
 
-    const smtpHost = process.env.SMTP_HOST || process.env.MAIL_HOST || '';
-    const smtpPort = parseInt(process.env.SMTP_PORT || process.env.MAIL_PORT || '587', 10);
+    const smtpHost = process.env.SMTP_HOST || process.env.MAIL_HOST || 'smtp.gmail.com';
+    const smtpPort = parseInt(process.env.SMTP_PORT || process.env.MAIL_PORT || '465', 10);
     const smtpUser = process.env.SMTP_USER || process.env.SMTP_USERNAME || process.env.MAIL_USERNAME || '';
     const smtpPass = (process.env.SMTP_PASS || process.env.SMTP_PASSWORD || process.env.MAIL_PASSWORD || process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
     const smtpSecure = (process.env.SMTP_SECURE || process.env.MAIL_ENCRYPTION || '').toLowerCase() === 'ssl' || smtpPort === 465;
@@ -153,43 +166,105 @@ export class PhpMailerService {
 
     // If live SMTP credentials are configured and not in mock mode, send over SMTP
     if (smtpHost && smtpUser && smtpPass) {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      });
+      try {
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpSecure,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+          tls: {
+            rejectUnauthorized: false,
+          },
+          connectionTimeout: 10000,
+        });
 
-      await transporter.sendMail({
-        from: `"${fromName}" <${fromEmail}>`,
-        replyTo: supportEmail,
-        to: `"${toName}" <${toEmail}>`,
-        subject: finalSubject,
-        text: finalText,
-        html: finalHtml,
-        attachments,
-        messageId,
-      });
+        await transporter.sendMail({
+          from: `"${fromName}" <${fromEmail}>`,
+          replyTo: supportEmail,
+          to: `"${toName}" <${toEmail}>`,
+          subject: finalSubject,
+          text: finalText,
+          html: finalHtml,
+          attachments,
+          messageId,
+        });
 
-      this.logOutbox(payload, 'SENT', finalSubject, `Sent via SMTP (${smtpHost})`);
+        this.logOutbox(payload, 'SENT', finalSubject, `Sent via SMTP (${smtpHost}:${smtpPort})`);
 
-      return {
-        success: true,
-        status: 'SENT',
-        message: `Email sent successfully via SMTP (${smtpHost})`,
-        messageId,
-        recipient: toEmail,
-        subject: finalSubject,
-        eventType,
-        pdfAttached: attachments.length > 0 || Boolean(payload.attachInvoicePdf),
-        timestamp: new Date().toISOString(),
-      };
+        return {
+          success: true,
+          status: 'SENT',
+          message: `Email sent successfully via SMTP (${smtpHost})`,
+          messageId,
+          recipient: toEmail,
+          subject: finalSubject,
+          eventType,
+          pdfAttached: attachments.length > 0 || Boolean(payload.attachInvoicePdf),
+          timestamp: new Date().toISOString(),
+        };
+      } catch (err: any) {
+        // Automatic port fallback: if port was not 465 (e.g. 587 timed out), retry with port 465 SSL
+        if (smtpPort !== 465) {
+          try {
+            const fallbackTransporter = nodemailer.createTransport({
+              host: smtpHost,
+              port: 465,
+              secure: true,
+              auth: {
+                user: smtpUser,
+                pass: smtpPass,
+              },
+              tls: {
+                rejectUnauthorized: false,
+              },
+              connectionTimeout: 10000,
+            });
+
+            await fallbackTransporter.sendMail({
+              from: `"${fromName}" <${fromEmail}>`,
+              replyTo: supportEmail,
+              to: `"${toName}" <${toEmail}>`,
+              subject: finalSubject,
+              text: finalText,
+              html: finalHtml,
+              attachments,
+              messageId,
+            });
+
+            this.logOutbox(payload, 'SENT', finalSubject, `Sent via SMTP fallback (${smtpHost}:465)`);
+
+            return {
+              success: true,
+              status: 'SENT',
+              message: `Email sent successfully via SMTP fallback (${smtpHost}:465)`,
+              messageId,
+              recipient: toEmail,
+              subject: finalSubject,
+              eventType,
+              pdfAttached: attachments.length > 0 || Boolean(payload.attachInvoicePdf),
+              timestamp: new Date().toISOString(),
+            };
+          } catch {}
+        }
+
+        const errorMsg = err?.message || 'SMTP delivery failed';
+        this.logOutbox(payload, 'FAILED', finalSubject, errorMsg);
+
+        return {
+          success: false,
+          status: 'FAILED',
+          error: errorMsg,
+          messageId,
+          recipient: toEmail,
+          subject: finalSubject,
+          eventType,
+          pdfAttached: attachments.length > 0 || Boolean(payload.attachInvoicePdf),
+          timestamp: new Date().toISOString(),
+        };
+      }
     } else {
       const errorMsg = 'SMTP credentials not configured in server environment. Please set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in .env';
 

@@ -98,10 +98,10 @@ const envSchema = z.object({
 
   // Transactional Email / PHPMailer (SMTP)
   SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.string().default('587'),
+  SMTP_PORT: z.string().default('465'),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  SMTP_SECURE: z.string().default('tls'),
+  SMTP_SECURE: z.string().default('ssl'),
   SMTP_FROM_EMAIL: z.string().optional(),
   SMTP_FROM_NAME: z.string().default('SR Enterprises'),
   SUPPORT_EMAIL: z.string().default('srenterprises02015@gmail.com'),

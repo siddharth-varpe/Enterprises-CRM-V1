@@ -64,13 +64,13 @@ class MailerEngine {
         $mail = new PHPMailer(true);
         $mail->CharSet = 'UTF-8';
         $mail->Encoding = 'base64';
-        $mail->Timeout = 20; // 20 seconds connection timeout
+        $mail->Timeout = 10; // 10 seconds connection timeout
 
         $smtpHost = getenv('SMTP_HOST') ?: getenv('MAIL_HOST') ?: $_ENV['SMTP_HOST'] ?? $_ENV['MAIL_HOST'] ?? $_SERVER['SMTP_HOST'] ?? $_SERVER['MAIL_HOST'] ?? 'smtp.gmail.com';
-        $smtpPort = (int)(getenv('SMTP_PORT') ?: getenv('MAIL_PORT') ?: $_ENV['SMTP_PORT'] ?? $_ENV['MAIL_PORT'] ?? $_SERVER['SMTP_PORT'] ?? $_SERVER['MAIL_PORT'] ?? 587);
+        $smtpPort = (int)(getenv('SMTP_PORT') ?: getenv('MAIL_PORT') ?: $_ENV['SMTP_PORT'] ?? $_ENV['MAIL_PORT'] ?? $_SERVER['SMTP_PORT'] ?? $_SERVER['MAIL_PORT'] ?? 465);
         $smtpUser = getenv('SMTP_USER') ?: getenv('SMTP_USERNAME') ?: getenv('MAIL_USERNAME') ?: $_ENV['SMTP_USER'] ?? $_ENV['SMTP_USERNAME'] ?? $_ENV['MAIL_USERNAME'] ?? $_SERVER['SMTP_USER'] ?? $_SERVER['SMTP_USERNAME'] ?? $_SERVER['MAIL_USERNAME'] ?? 'srenterprises02015@gmail.com';
         $smtpPass = str_replace(' ', '', (getenv('SMTP_PASS') ?: getenv('SMTP_PASSWORD') ?: getenv('MAIL_PASSWORD') ?: getenv('GMAIL_APP_PASSWORD') ?: $_ENV['SMTP_PASS'] ?? $_ENV['SMTP_PASSWORD'] ?? $_ENV['MAIL_PASSWORD'] ?? $_ENV['GMAIL_APP_PASSWORD'] ?? $_SERVER['SMTP_PASS'] ?? $_SERVER['SMTP_PASSWORD'] ?? $_SERVER['MAIL_PASSWORD'] ?? $_SERVER['GMAIL_APP_PASSWORD'] ?? ''));
-        $smtpSecure = strtolower(getenv('SMTP_SECURE') ?: getenv('MAIL_ENCRYPTION') ?: $_ENV['SMTP_SECURE'] ?? $_ENV['MAIL_ENCRYPTION'] ?? $_SERVER['SMTP_SECURE'] ?? $_SERVER['MAIL_ENCRYPTION'] ?? 'tls');
+        $smtpSecure = strtolower(getenv('SMTP_SECURE') ?: getenv('MAIL_ENCRYPTION') ?: $_ENV['SMTP_SECURE'] ?? $_ENV['MAIL_ENCRYPTION'] ?? $_SERVER['SMTP_SECURE'] ?? $_SERVER['MAIL_ENCRYPTION'] ?? ($smtpPort === 465 ? 'ssl' : 'tls'));
         
         $fromEmail = getenv('SMTP_FROM_EMAIL') ?: getenv('SMTP_FROM') ?: getenv('MAIL_FROM_ADDRESS') ?: ($smtpUser ?: 'srenterprises02015@gmail.com');
         $fromName = getenv('SMTP_FROM_NAME') ?: getenv('MAIL_FROM_NAME') ?: 'Enterprises CRM';
@@ -267,8 +267,37 @@ class MailerEngine {
                 ];
             }
 
-            // Send via PHPMailer SMTP
-            $mail->send();
+            // Send via PHPMailer SMTP with automatic port/encryption fallback
+            try {
+                $mail->send();
+            } catch (\Throwable $sendError) {
+                $err = !empty($mail->ErrorInfo) ? $mail->ErrorInfo : $sendError->getMessage();
+                $isConnectionTimeout = stripos($err, 'timed out') !== false || stripos($err, 'Failed to connect') !== false || stripos($err, 'Could not connect') !== false;
+
+                if ($isConnectionTimeout) {
+                    if ($mail->Port !== 465) {
+                        try {
+                            $mail->Port = 465;
+                            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                            $mail->send();
+                        } catch (\Throwable $retryError) {
+                            throw $sendError;
+                        }
+                    } elseif ($mail->Port === 465) {
+                        try {
+                            $mail->Port = 587;
+                            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                            $mail->send();
+                        } catch (\Throwable $retryError) {
+                            throw $sendError;
+                        }
+                    } else {
+                        throw $sendError;
+                    }
+                } else {
+                    throw $sendError;
+                }
+            }
             self::logOutbox($payload, $mail, 'SENT');
 
             return [
