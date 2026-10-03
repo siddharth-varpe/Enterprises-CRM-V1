@@ -39,6 +39,9 @@ export function resolveDatabaseStorageDir(): string {
 
   // Anchor persistent database deterministically to apps/api/.crm-data/pgdata
   const apiRoot = path.resolve(__dirname, '../../');
+  if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+    return path.resolve(apiRoot, '.crm-data', 'test-pgdata');
+  }
   return path.resolve(apiRoot, '.crm-data', 'pgdata');
 }
 
@@ -796,6 +799,8 @@ export async function ensureInquiryColumns(targetPg: PGlite | postgres.Sql): Pro
     `ALTER TABLE "inquiries" ADD COLUMN IF NOT EXISTS "assigned_at" timestamp with time zone;`,
     `ALTER TABLE "inquiries" ADD COLUMN IF NOT EXISTS "is_possible_duplicate" boolean DEFAULT false;`,
     `ALTER TABLE "inquiries" ADD COLUMN IF NOT EXISTS "duplicate_of_inquiry_id" uuid;`,
+    `ALTER TABLE "inquiries" ADD COLUMN IF NOT EXISTS "address" text;`,
+    `ALTER TABLE "inquiries" ADD COLUMN IF NOT EXISTS "city" text;`,
     `ALTER TABLE "inquiries" ADD COLUMN IF NOT EXISTS "converted_by_user_id" uuid REFERENCES "users"("id") ON DELETE SET NULL;`,
     `CREATE TABLE IF NOT EXISTS "inquiry_events" (
       "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -478,7 +478,7 @@ export class JobCardsRepository {
       }
 
       const tech = memoryTechnicians.find((t) => t.id === input.technicianId);
-      const techName = tech?.fullName || 'Aakash Sharma';
+      const techName = tech?.fullName || 'Technician';
       const techPhone = tech?.phone || '';
       const techSkills = tech?.skills || [];
 

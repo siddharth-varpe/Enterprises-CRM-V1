@@ -61,83 +61,9 @@ const FALLBACK_TEMPLATES: WhatsAppTemplateDefinition[] = [
   },
 ];
 
-const FALLBACK_CONVERSATIONS: WhatsAppConversation[] = [
-  {
-    id: '00000000-0000-0000-0000-000000000201',
-    contactId: '00000000-0000-0000-0000-000000000211',
-    status: 'ACTIVE',
-    unreadCount: 1,
-    lastMessagePreview: 'Could you please confirm the technician visit time?',
-    lastMessageAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    contact: {
-      id: '00000000-0000-0000-0000-000000000211',
-      phone: '+919876543210',
-      customerId: '00000000-0000-0000-0000-000000000011',
-      optInStatus: 'OPTED_IN',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      customer: {
-        id: '00000000-0000-0000-0000-000000000011',
-        customerNumber: 'CUST-0001',
-        fullName: 'Rahul Patil',
-      },
-    },
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000202',
-    contactId: '00000000-0000-0000-0000-000000000212',
-    status: 'ACTIVE',
-    unreadCount: 0,
-    lastMessagePreview: 'Thank you! Payment receipt received.',
-    lastMessageAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    contact: {
-      id: '00000000-0000-0000-0000-000000000212',
-      phone: '+919822012345',
-      customerId: '00000000-0000-0000-0000-000000000012',
-      optInStatus: 'OPTED_IN',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      customer: {
-        id: '00000000-0000-0000-0000-000000000012',
-        customerNumber: 'CUST-0002',
-        fullName: 'Amit Sharma',
-      },
-    },
-  },
-];
+const FALLBACK_CONVERSATIONS: WhatsAppConversation[] = [];
 
-const FALLBACK_MESSAGES: Record<string, WhatsAppMessage[]> = {
-  '00000000-0000-0000-0000-000000000201': [
-    {
-      id: 'msg-001',
-      conversationId: '00000000-0000-0000-0000-000000000201',
-      contactId: '00000000-0000-0000-0000-000000000211',
-      direction: 'OUTBOUND',
-      messageType: 'TEMPLATE',
-      templateName: 'service_scheduled',
-      content:
-        'Dear Rahul Patil, your RO service for Kent Grand Plus has been scheduled on Tomorrow 10:00 AM with technician Sagar Shinde.',
-      status: 'READ',
-      createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-    },
-    {
-      id: 'msg-002',
-      conversationId: '00000000-0000-0000-0000-000000000201',
-      contactId: '00000000-0000-0000-0000-000000000211',
-      direction: 'INBOUND',
-      messageType: 'TEXT',
-      content: 'Could you please confirm the technician visit time?',
-      status: 'DELIVERED',
-      createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-      updatedAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    },
-  ],
-};
+const FALLBACK_MESSAGES: Record<string, WhatsAppMessage[]> = {};
 
 export function useWhatsAppTemplates() {
   return useQuery({
@@ -196,7 +122,7 @@ export function useWhatsAppConversation(id?: string) {
         return (response as any)?.data?.data ?? response?.data ?? response;
       } catch {
         const found =
-          FALLBACK_CONVERSATIONS.find((c) => c.id === id) || FALLBACK_CONVERSATIONS[0];
+          FALLBACK_CONVERSATIONS.find((c) => c.id === id) || null;
         return found;
       }
     },
@@ -218,19 +144,7 @@ export function useWhatsAppMessages(conversationId?: string) {
         }>(`/whatsapp/conversations/${conversationId}/messages`);
         return response.data;
       } catch {
-        const msgs = FALLBACK_MESSAGES[conversationId] || [
-          {
-            id: 'msg-fallback-01',
-            conversationId,
-            contactId: 'contact-01',
-            direction: 'INBOUND' as const,
-            messageType: 'TEXT' as const,
-            content: 'Hi, I need assistance regarding my water purifier service.',
-            status: 'DELIVERED' as const,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ];
+        const msgs = FALLBACK_MESSAGES[conversationId] || [];
         return {
           data: msgs,
           pagination: { page: 1, limit: 50, total: msgs.length, totalPages: 1 },

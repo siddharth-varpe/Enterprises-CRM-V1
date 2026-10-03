@@ -44,13 +44,13 @@ const COLOR_MAP = {
   },
 };
 
-// Default fallback data for smooth initial rendering
+// Default flat curve data when no activity exists
 const DEFAULT_CURVE_DATA: Record<string, number[]> = {
-  red: [6, 9, 7, 11, 8, 12, 12],
-  blue: [3, 5, 4, 7, 6, 8, 8],
-  orange: [5, 4, 6, 3, 5, 4, 4],
-  green: [7, 6, 8, 5, 6, 5, 5],
-  purple: [4, 5, 5, 6, 5, 6, 6],
+  red: [0, 0, 0, 0, 0, 0, 0],
+  blue: [0, 0, 0, 0, 0, 0, 0],
+  orange: [0, 0, 0, 0, 0, 0, 0],
+  green: [0, 0, 0, 0, 0, 0, 0],
+  purple: [0, 0, 0, 0, 0, 0, 0],
 };
 
 export const ActivityCurve: React.FC<ActivityCurveProps> = ({

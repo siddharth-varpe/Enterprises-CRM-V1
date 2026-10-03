@@ -15,68 +15,15 @@ import type {
   ConvertInquiryInput,
 } from '@crm/validation';
 
-const FALLBACK_INQUIRIES: Inquiry[] = [
-  {
-    id: '00000000-0000-0000-0000-000000000101',
-    inquiryNumber: 'INQ-2026-000101',
-    name: 'Priya Deshmukh',
-    phone: '+91 98221 55667',
-    email: 'priya.deshmukh@gmail.com',
-    city: 'Pune',
-    address: 'Flat 304, Marvel Arco, Hadapsar, Pune',
-    inquiryType: 'NEW_PURCHASE',
-    priority: 'HIGH',
-    source: 'WEBSITE',
-    status: 'NEW',
-    message: 'Need a commercial RO purifier for our clinic. Approx 50L/hr capacity required.',
-    isPossibleDuplicate: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000102',
-    inquiryNumber: 'INQ-2026-000102',
-    name: 'Sunil Kulkarni',
-    phone: '+91 97654 11223',
-    email: 'sunil.k@kulkarnieng.com',
-    city: 'PCMC',
-    address: 'Bhosari MIDC, PCMC, Pune',
-    inquiryType: 'SERVICE',
-    priority: 'URGENT',
-    source: 'WHATSAPP',
-    status: 'IN_PROGRESS',
-    assignedToUserId: 'usr-admin-0001',
-    message: 'Water taste is salty, TDS reading is above 450 ppm. Need membrane replacement.',
-    isPossibleDuplicate: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000103',
-    inquiryNumber: 'INQ-2026-000103',
-    name: 'Anita Rane',
-    phone: '+91 98812 33445',
-    email: 'anita.rane@yahoo.com',
-    city: 'Pune',
-    address: 'Kothrud, Pune',
-    inquiryType: 'GENERAL',
-    priority: 'NORMAL',
-    source: 'WEBSITE',
-    status: 'CONTACTED',
-    message: 'Want to renew AMC plan for Kent Grand Plus. Please send pricing.',
-    isPossibleDuplicate: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-  },
-];
+const FALLBACK_INQUIRIES: Inquiry[] = [];
 
 const FALLBACK_INQUIRY_KPIS: InquiryKPIs = {
-  totalInquiries: 24,
-  newInquiries: 8,
-  followUpDue: 6,
-  qualifiedLeads: 11,
-  convertedCount: 5,
-  conversionRate: 20.8,
+  totalInquiries: 0,
+  newInquiries: 0,
+  followUpDue: 0,
+  qualifiedLeads: 0,
+  convertedCount: 0,
+  conversionRate: 0,
   spamCount: 0,
 };
 
@@ -133,7 +80,7 @@ export function useInquiry(id?: string) {
         const response = await apiClient.get<Inquiry>(`/inquiries/${id}`);
         return (response as any)?.data?.data ?? response?.data ?? response;
       } catch {
-        const found = FALLBACK_INQUIRIES.find((i) => i.id === id) || FALLBACK_INQUIRIES[0];
+        const found = FALLBACK_INQUIRIES.find((i) => i.id === id) || null;
         return found;
       }
     },
