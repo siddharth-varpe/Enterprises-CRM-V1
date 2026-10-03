@@ -1,0 +1,54 @@
+# ==============================================================================
+# ENTERPRISES CRM — AWS EC2 SYSTEMD SERVICE DEFINITION
+# ==============================================================================
+# File: /etc/systemd/system/enterprises-crm.service
+# Target: Single-Instance EC2 Production Deployment
+# Process Lifecycle: Automatic boot startup, crash recovery, graceful shutdown
+# ==============================================================================
+
+[Unit]
+Description=Enterprises CRM Integrated Fastify API & Realtime Gateway
+After=network.target postgresql.service redis.service redis-server.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=crmapp
+Group=crmapp
+WorkingDirectory=/opt/enterprises-crm
+
+# Load production environment variables safely (restricted 600 permissions)
+EnvironmentFile=/etc/enterprises-crm.env
+Environment=NODE_ENV=production
+Environment=PORT=4000
+Environment=HOST=127.0.0.1
+
+# Production Execution Command
+# Uses pnpm to start the backend with validated runtime dependencies
+ExecStart=/usr/bin/pnpm --filter @crm/api start
+
+# Restart policies: Resilient against crashes, reboots, and SSH disconnects
+Restart=always
+RestartSec=5s
+
+# Graceful shutdown (SIGTERM allows connection draining and DB/Redis disconnect)
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+# Security Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/enterprises-crm/storage /var/log/enterprises-crm /var/lib/enterprises-crm
+
+# Resource limits (prevent file descriptor exhaustion under Socket.IO load)
+LimitNOFILE=65535
+
+# Logging to systemd journal
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=enterprises-crm
+
+[Install]
+WantedBy=multi-user.target
