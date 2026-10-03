@@ -109,33 +109,51 @@
         text-align: center;
         max-width: 480px;
         width: 100%;
-        margin-top: -30px;
+        margin-top: -24px;
       }
       .crm-splash-logo-wrapper {
         margin-bottom: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
+        filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.65)) drop-shadow(0 0 24px rgba(14, 165, 233, 0.28));
       }
       .crm-splash-logo-img {
-        width: 175px;
-        height: auto;
-        max-width: 65vw;
-        max-height: 230px;
+        width: 124px;
+        height: 124px;
+        border-radius: 28px;
         object-fit: contain;
         display: block;
       }
-      @media (min-width: 769px) {
+      @media (max-width: 480px) {
         .crm-splash-logo-img {
-          width: 215px;
-          max-height: 285px;
+          width: 102px;
+          height: 102px;
+          border-radius: 22px;
         }
       }
-      @media (max-width: 360px) {
-        .crm-splash-logo-img {
-          width: 140px;
-          max-height: 185px;
+      .crm-splash-title {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        color: #ffffff;
+        margin-bottom: 6px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .crm-splash-title-crm {
+        color: #38bdf8;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+      @media (max-width: 480px) {
+        .crm-splash-title {
+          font-size: 24px;
         }
       }
       .crm-splash-tagline {
@@ -266,18 +284,23 @@
     <!-- Immediate Real Code-Based Application Loading Screen (Desktop + Mobile) -->
     <div id="crm-splash-screen" role="status" aria-live="polite" aria-label="Loading Enterprises CRM">
       <div class="crm-splash-container">
-        <!-- Approved Transparent CRM Logo PNG -->
+        <!-- Official CRM Logo -->
         <div class="crm-splash-logo-wrapper">
           <img
             id="crm-splash-logo"
             src="/crm-logo.png"
             alt="Enterprises CRM"
             class="crm-splash-logo-img"
-            width="220"
-            height="292"
+            width="124"
+            height="124"
             loading="eager"
             decoding="sync"
           />
+        </div>
+
+        <!-- Application Name -->
+        <div id="crm-splash-title" class="crm-splash-title">
+          Enterprises <span class="crm-splash-title-crm">CRM</span>
         </div>
 
         <!-- Tagline -->

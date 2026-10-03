@@ -19,6 +19,7 @@ describe('Splash Screen Lifecycle & Timing Suite', () => {
           <div class="crm-splash-logo-wrapper">
             <img id="crm-splash-logo" src="/crm-logo.png" alt="Enterprises CRM" />
           </div>
+          <div id="crm-splash-title" class="crm-splash-title">Enterprises <span class="crm-splash-title-crm">CRM</span></div>
           <div class="crm-splash-tagline">Manage · Grow · Succeed Together</div>
           <div class="crm-splash-loader-bar">
             <div id="crm-splash-progress" class="crm-splash-progress-fill" style="width: 25%;"></div>
@@ -46,6 +47,7 @@ describe('Splash Screen Lifecycle & Timing Suite', () => {
     expect(logo).not.toBeNull();
     expect(logo.getAttribute('src')).toBe('/crm-logo.png');
     expect(progress).not.toBeNull();
+    expect(splash?.textContent).toContain('Enterprises CRM');
     expect(splash?.textContent).toContain('Manage · Grow · Succeed Together');
     expect(splash?.textContent).toContain('Loading your CRM...');
     expect(splash?.textContent).toContain('Building better business relationships');

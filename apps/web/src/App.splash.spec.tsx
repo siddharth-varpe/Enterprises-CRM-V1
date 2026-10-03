@@ -27,6 +27,7 @@ describe('SplashScreenCoordinator React Integration Suite', () => {
           <div class="crm-splash-logo-wrapper">
             <img id="crm-splash-logo" src="/crm-logo.png" alt="Enterprises CRM" />
           </div>
+          <div id="crm-splash-title" class="crm-splash-title">Enterprises <span class="crm-splash-title-crm">CRM</span></div>
           <div class="crm-splash-tagline">Manage · Grow · Succeed Together</div>
           <div class="crm-splash-loader-bar">
             <div id="crm-splash-progress" class="crm-splash-progress-fill" style="width: 25%;"></div>

@@ -40,19 +40,28 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         background: 'radial-gradient(ellipse at 50% 38%, #0a254a 0%, #031429 55%, #000818 100%)',
       }}
     >
-      <div className="flex flex-col items-center justify-center text-center max-w-[480px] w-full -mt-8">
-        {/* Approved Transparent CRM Logo PNG */}
-        <div className="mb-5 flex items-center justify-center drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
+      <div className="flex flex-col items-center justify-center text-center max-w-[480px] w-full -mt-6">
+        {/* Official CRM Logo Icon */}
+        <div className="mb-5 flex items-center justify-center filter drop-shadow-[0_14px_34px_rgba(0,0,0,0.65)] drop-shadow-[0_0_24px_rgba(14,165,233,0.28)]">
           <img
             id="crm-splash-logo"
             src="/crm-logo.png"
             alt="Enterprises CRM"
-            className="w-[175px] md:w-[215px] max-w-[65vw] max-h-[230px] md:max-h-[285px] object-contain block"
-            width="220"
-            height="292"
+            className="w-[102px] h-[102px] md:w-[124px] md:h-[124px] rounded-[22px] md:rounded-[28px] object-contain block select-none"
+            width="124"
+            height="124"
             loading="eager"
             decoding="sync"
           />
+        </div>
+
+        {/* Application Name */}
+        <div
+          id="crm-splash-title"
+          className="font-['Plus_Jakarta_Sans',sans-serif] text-2xl md:text-[28px] font-extrabold tracking-tight text-white mb-1.5 drop-shadow-[0_2px_10px_rgba(0,0,0,0.75)] flex items-center justify-center gap-2"
+        >
+          <span>Enterprises</span>
+          <span className="text-sky-400 font-mono font-extrabold tracking-wide">CRM</span>
         </div>
 
         {/* Tagline */}
