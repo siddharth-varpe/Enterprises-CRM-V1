@@ -89,7 +89,7 @@ export const ServicesDirectory: React.FC = () => {
       {/* Top Header */}
       <PageHeader
         title="Services & Maintenance"
-        description="Schedule periodic filter replacements, assign technician visits, track warranty status, and inspect job cards."
+        description="Schedule periodic maintenance, assign technician visits, track warranty status, and inspect job cards."
         breadcrumbs={[{ label: 'Home', href: '/dashboard' }, { label: 'Services' }]}
         actions={
           <Button

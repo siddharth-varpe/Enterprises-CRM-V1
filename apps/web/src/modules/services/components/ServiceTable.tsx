@@ -501,7 +501,7 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
           }}
           onPageChange={onPageChange}
           emptyTitle="No services found"
-          emptyDescription="Schedule a periodic filter check, repair visit, or maintenance service to get started."
+          emptyDescription="Schedule a periodic maintenance visit, repair task, or service check to get started."
         />
       </div>
 
