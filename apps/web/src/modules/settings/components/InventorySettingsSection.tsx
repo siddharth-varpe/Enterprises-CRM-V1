@@ -14,7 +14,7 @@ export const InventorySettingsSection: React.FC = () => {
     lowStockThreshold: 5,
     allowNegativeStock: false,
     valuationMethod: 'FIFO',
-    skuPrefix: 'SR',
+    skuPrefix: 'ENT',
   });
 
   const [isDirty, setIsDirty] = useState(false);
@@ -146,7 +146,7 @@ export const InventorySettingsSection: React.FC = () => {
               value={form.skuPrefix || ''}
               onChange={(e) => handleChange('skuPrefix', e.target.value.toUpperCase())}
               className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono text-slate-900"
-              placeholder="SR"
+              placeholder="ENT"
             />
             <p className="text-[11px] text-slate-500 mt-1">Auto-assigned when creating new inventory items.</p>
           </div>

@@ -111,7 +111,7 @@ describe('Phase 27: Settings & Business Configuration API Routes — Integration
       expect(response.statusCode).toBe(HTTP_STATUS.OK);
       const json = JSON.parse(response.body);
       expect(json.success).toBe(true);
-      expect(json.data.appName).toContain('SR Enterprises');
+      expect(json.data.appName).toContain('Enterprises CRM');
       expect(json.data.currencySymbol).toBe('₹');
       expect(json.data.defaultTaxRatePercent).toBe(18);
     });

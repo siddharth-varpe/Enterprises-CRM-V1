@@ -61,7 +61,7 @@ describe('Phase 27: Central ConfigurationService — Unit Tests', () => {
       expect(taxRate).toBe(18.00);
 
       const appName = await service.getSetting<string>('SYSTEM', 'appName');
-      expect(appName).toContain('SR Enterprises');
+      expect(appName).toContain('Enterprises CRM');
     });
   });
 

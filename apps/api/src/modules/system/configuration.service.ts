@@ -171,7 +171,7 @@ export const CategoryValidators: Record<SettingsCategory, z.ZodTypeAny> = {
 
 export const SYSTEM_DEFAULTS: Record<SettingsCategory, any> = {
   SYSTEM: {
-    appName: 'SR Enterprises CRM / SRM',
+    appName: 'Enterprises CRM',
     appVersion: '1.0.0',
     timezone: 'Asia/Kolkata',
     currency: 'INR',
@@ -183,8 +183,8 @@ export const SYSTEM_DEFAULTS: Record<SettingsCategory, any> = {
   } as SystemSettings,
 
   BUSINESS: {
-    businessName: 'SR Enterprises',
-    legalName: 'SR Enterprises Water Purification Services',
+    businessName: 'Enterprises CRM',
+    legalName: 'Enterprises CRM Services',
     address: 'Shop 4, Om Heights, Baner Road',
     city: 'Pune',
     state: 'Maharashtra',
@@ -192,7 +192,7 @@ export const SYSTEM_DEFAULTS: Record<SettingsCategory, any> = {
     country: 'India',
     phone: '7385059197',
     email: 'srenterprises02015@gmail.com',
-    website: 'https://srenterprises.com',
+    website: 'https://enterprisescrm.com',
     gstin: '27AAAAA0000A1Z5',
     panNumber: 'AAAAA0000A',
     logoUrl: '',
@@ -211,7 +211,7 @@ export const SYSTEM_DEFAULTS: Record<SettingsCategory, any> = {
     numberFormat: 'INV-{YYYY}-{COUNTER}',
     startingNumber: 1,
     paymentTermsDays: 30,
-    defaultNotes: 'Thank you for choosing SR Enterprises for your pure water needs.',
+    defaultNotes: 'Thank you for choosing Enterprises CRM for your business needs.',
     defaultTermsAndConditions: '1. Payment due within 30 days.\n2. Goods once sold are covered under standard warranty.',
     showTaxBreakdown: true,
     showGst: true,
@@ -257,7 +257,7 @@ export const SYSTEM_DEFAULTS: Record<SettingsCategory, any> = {
     lowStockThreshold: 5,
     allowNegativeStock: false,
     valuationMethod: 'FIFO',
-    skuPrefix: 'SR',
+    skuPrefix: 'ENT',
   } as InventorySettings,
 
   NOTIFICATION: {
