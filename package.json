@@ -21,8 +21,6 @@
     "test:e2e": "playwright test",
     "lint": "pnpm --recursive --filter @crm/* run lint",
     "typecheck": "pnpm --recursive --filter @crm/* run typecheck",
-    "format": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
-    "format:write": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "db:generate": "pnpm --filter @crm/api db:generate",
     "db:migrate": "pnpm --filter @crm/api db:migrate",
     "db:studio": "pnpm --filter @crm/api db:studio",
@@ -34,7 +32,6 @@
   "devDependencies": {
     "@playwright/test": "^1.50.1",
     "@types/node": "^22.13.4",
-    "prettier": "^3.5.1",
     "typescript": "^5.7.3"
   }
 }

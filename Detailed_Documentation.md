@@ -60,7 +60,7 @@ SR-Enterprises-CRM-Software-V1/
 │   ├── web/                   # Frontend React 18, Vite, Tailwind CSS, TanStack Query
 │   └── desktop/               # Electron Shell packaging Local Node API + Static SPA
 ├── packages/
-│   ├── config/                # Shared ESLint, TypeScript, and Prettier configurations
+│   ├── config/                # Shared ESLint and TypeScript configurations
 │   ├── shared/                # Universal Constants, Date utilities, Regex, Rate Limits
 │   ├── types/                 # Shared TypeScript domain contracts, Enums, DTOs
 │   └── validation/            # Zod validation schemas for API inputs and frontend forms

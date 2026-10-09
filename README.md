@@ -120,8 +120,6 @@ pnpm dev:web   # React Vite App (http://localhost:3000)
 | `pnpm test:e2e` | Runs Playwright end-to-end tests |
 | `pnpm lint` | Runs ESLint / type linters across workspace |
 | `pnpm typecheck` | Validates TypeScript types across workspace without emitting code |
-| `pnpm format` | Checks Prettier formatting across the codebase |
-| `pnpm format:write` | Formats all source files with Prettier |
 | `pnpm docker:up` | Starts local PostgreSQL 18 and Redis containers |
 | `pnpm docker:down` | Stops local containers |
 
