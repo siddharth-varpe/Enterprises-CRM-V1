@@ -5,13 +5,17 @@
  */
 
 export const TRACKING_STATUSES = {
-  NOT_TRACKING: 'NOT_TRACKING',
-  NAVIGATION_SELECTED: 'NAVIGATION_SELECTED',
+  UNTRACKED: 'UNTRACKED',
+  NOT_TRACKING: 'UNTRACKED',
+  NAVIGATION_STARTING: 'NAVIGATION_STARTING',
+  NAVIGATION_SELECTED: 'NAVIGATION_STARTING',
   ON_THE_WAY: 'ON_THE_WAY',
   ARRIVAL_PENDING: 'ARRIVAL_PENDING',
   AT_CUSTOMER: 'AT_CUSTOMER',
   STALE: 'STALE',
   OFFLINE: 'OFFLINE',
+  NAVIGATION_ERROR: 'NAVIGATION_ERROR',
+  NAVIGATION_ENDED: 'NAVIGATION_ENDED',
   STOPPED_ON_WAY: 'STOPPED_ON_WAY',
 } as const;
 
@@ -50,6 +54,27 @@ export interface ActiveDestinationRecord {
   startedAt: number;
 }
 
+export type RouteCalculationStatus = 'IDLE' | 'LOADING' | 'SUCCESS' | 'UNAVAILABLE' | 'ERROR';
+
+export type RouteErrorCode =
+  | 'MISSING_ORIGIN'
+  | 'MISSING_DESTINATION'
+  | 'INVALID_COORDINATES'
+  | 'LOCATION_STALE'
+  | 'PROVIDER_CONFIGURATION_ERROR'
+  | 'PROVIDER_AUTHORIZATION_ERROR'
+  | 'PROVIDER_RATE_LIMITED'
+  | 'PROVIDER_INVALID_RESPONSE'
+  | 'NETWORK_ERROR'
+  | 'REQUEST_TIMEOUT'
+  | 'UNKNOWN_ROUTE_ERROR';
+
+export interface TravelledPathPoint {
+  latitude: number;
+  longitude: number;
+  timestamp: number;
+}
+
 export interface TechnicianTrackingRecord {
   technicianId: string;
   technicianName: string;
@@ -61,6 +86,14 @@ export interface TechnicianTrackingRecord {
   distanceText?: string | null;
   etaSeconds?: number | null;
   etaText?: string | null;
+  routeStatus?: RouteCalculationStatus;
+  routeErrorCode?: RouteErrorCode | null;
+  routeErrorMessage?: string | null;
+  routeCalculatedAt?: number | null;
+  routeOriginLat?: number | null;
+  routeOriginLng?: number | null;
+  routePolyline?: string | null;
+  travelledPath?: TravelledPathPoint[];
   arrivalPendingSince?: number | null;
   arrivalPendingSamples?: number;
   lastUpdate: number;
@@ -68,9 +101,16 @@ export interface TechnicianTrackingRecord {
 }
 
 export interface RoutesCalculationResult {
+  status: RouteCalculationStatus;
   distanceMeters: number;
   durationSeconds: number;
   distanceText: string;
   durationText: string;
   source: 'GOOGLE_ROUTES_API' | 'HAVERSINE_ESTIMATE';
+  polyline?: string | null;
+  errorCode?: RouteErrorCode | null;
+  errorMessage?: string | null;
+  calculatedAt?: number;
 }
+
+

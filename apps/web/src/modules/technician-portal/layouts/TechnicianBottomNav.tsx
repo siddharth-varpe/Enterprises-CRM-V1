@@ -1,32 +1,32 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  Briefcase,
+  Home,
   ListTodo,
-  CheckCircle2,
   User,
   Bell,
 } from 'lucide-react';
 import {
   TECHNICIAN_PORTAL_ROUTE_PREFIX,
   TECHNICIAN_SERVICES_ROUTE,
-  TECHNICIAN_COMPLETED_ROUTE,
   TECHNICIAN_PROFILE_ROUTE,
   TECHNICIAN_NOTIFICATIONS_ROUTE,
 } from '@crm/shared';
+import { apiClient } from '../../../lib/api-client';
 
 interface NavItem {
   to: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   end?: boolean;
+  hasBadge?: boolean;
 }
 
 const navItems: NavItem[] = [
   {
     to: TECHNICIAN_PORTAL_ROUTE_PREFIX,
     label: 'My Work',
-    icon: Briefcase,
+    icon: Home,
     end: true,
   },
   {
@@ -38,11 +38,7 @@ const navItems: NavItem[] = [
     to: TECHNICIAN_NOTIFICATIONS_ROUTE,
     label: 'Alerts',
     icon: Bell,
-  },
-  {
-    to: TECHNICIAN_COMPLETED_ROUTE,
-    label: 'Done',
-    icon: CheckCircle2,
+    hasBadge: true,
   },
   {
     to: TECHNICIAN_PROFILE_ROUTE,
@@ -52,12 +48,35 @@ const navItems: NavItem[] = [
 ];
 
 export const TechnicianBottomNav: React.FC = () => {
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await apiClient.get<{ unreadCount: number }>(
+          '/technician/me/notifications/unread-count'
+        );
+        if (mounted && res?.data?.unreadCount !== undefined) {
+          setUnreadCount(res.data.unreadCount);
+        }
+      } catch {}
+    };
+
+    fetchUnread();
+    const timer = setInterval(fetchUnread, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, []);
+
   return (
     <nav
       aria-label="Technician Mobile Navigation"
       className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-elevated px-2 py-1 select-none safe-area-bottom"
     >
-      <div className="grid grid-cols-5 h-14 items-center">
+      <div className="grid grid-cols-4 h-14 items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -76,11 +95,14 @@ export const TechnicianBottomNav: React.FC = () => {
               {({ isActive }) => (
                 <>
                   <div
-                    className={`p-1 rounded-lg transition-colors ${
+                    className={`relative p-1 rounded-lg transition-colors ${
                       isActive ? 'bg-primary-50 text-primary-600' : 'bg-transparent text-slate-500'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
+                    {item.hasBadge && unreadCount > 0 && (
+                      <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
+                    )}
                   </div>
                   <span className="text-[10px] sm:text-[11px] leading-tight mt-0.5 tracking-tight">
                     {item.label}

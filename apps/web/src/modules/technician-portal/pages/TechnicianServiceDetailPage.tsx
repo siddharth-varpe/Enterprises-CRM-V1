@@ -682,7 +682,7 @@ export const TechnicianServiceDetailPage: React.FC = () => {
           </div>
 
           <div className="flex flex-row items-center gap-2.5 shrink-0">
-            {mapUrl && (
+            {!isCompleted && mapUrl && (
               <a
                 href={mapUrl}
                 target="_blank"

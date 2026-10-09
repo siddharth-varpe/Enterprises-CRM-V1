@@ -209,26 +209,126 @@ journalctl -u enterprises-crm -f
 
 ---
 
-## 8. Nginx & SSL Setup (HTTPS & Domain)
+## 8. SSL/TLS Setup: Domainless Public IP or Custom Domain
 
-### Step 8.1: Point Domain DNS
-In your DNS provider (e.g. AWS Route 53 or Cloudflare), create an **A Record** pointing your domain (e.g. `crm.example.com`) to the EC2 Public IPv4 address.
+Browser-based technician GPS tracking strictly requires a **Secure Context** (`window.isSecureContext === true`). Unencrypted HTTP (e.g. `http://192.168.1.x:3000` or `http://<public-ip>:3000`) is hard-blocked by modern browsers (Chrome, Brave, Safari, Edge) with `PERMISSION_DENIED: Only secure origins are allowed`.
 
-### Step 8.2: Obtain Free SSL Certificate via Certbot
-```bash
-sudo certbot --nginx -d crm.example.com
-```
-Certbot will automatically obtain certificates and configure HTTPS in `/etc/nginx/sites-available/enterprises-crm.conf`.
-
-Test Nginx configuration:
-```bash
-sudo nginx -t
-sudo systemctl reload nginx
-```
+You have two production options on AWS EC2:
 
 ---
 
-## 9. Verifying the Deployment
+### Option A: Domainless Public IP HTTPS (No Domain Required — Recommended)
+
+Enterprises CRM supports direct IP-address SSL certificates issued by Let's Encrypt using the **shortlived profile** (`--preferred-profile shortlived`). This delivers valid, trusted HTTPS directly at `https://<public-ip>/` and `https://<public-ip>/technician`.
+
+#### Step A.1: Ensure Inbound Ports 80 and 443 are Open
+In your AWS EC2 Security Group, verify:
+* **Port 80 (TCP)**: Inbound from `0.0.0.0/0` (Used by ACME HTTP-01 challenge and 301 redirect to HTTPS)
+* **Port 443 (TCP)**: Inbound from `0.0.0.0/0` (Used for HTTPS application traffic and WebSockets)
+
+#### Step A.2: Run Automated IP Certificate Setup Script
+```bash
+sudo bash /opt/enterprises-crm/deploy/aws/certbot-ip-cert.sh
+```
+This automated script:
+1. Detects your EC2 public IPv4 address via AWS IMDSv2 (or fallback service).
+2. Verifies network accessibility and Certbot installation.
+3. Obtains a Let's Encrypt IP-address certificate using `--preferred-profile shortlived`.
+4. Symlinks the active certificate to `/etc/letsencrypt/live/enterprises-crm`.
+5. Installs and starts a systemd renewal timer (`certbot-ip-renew.timer`).
+6. Tests and reloads Nginx.
+
+#### Step A.3: Automated Certificate Renewal
+Let's Encrypt shortlived IP certificates have a validity of ~160 hours (~6.6 days). The automated systemd timer checks for renewal twice daily:
+```bash
+# Check status of the renewal timer:
+systemctl status certbot-ip-renew.timer
+
+# Test renewal with a dry run:
+sudo certbot renew --preferred-profile shortlived --dry-run
+```
+
+#### Step A.4: Alternative IP Certificate Options
+* **ZeroSSL 90-Day IP Certificate**:
+  If Let's Encrypt IP profile is rate-limited or unavailable:
+  ```bash
+  sudo certbot certonly --webroot -w /var/www/certbot \
+    --server https://acme.zerossl.com/v2/DV90 \
+    --email admin@example.com --agree-tos -d <YOUR_PUBLIC_IP>
+  ```
+* **Free Wildcard DNS (nip.io / DuckDNS)**:
+  `nip.io` maps any IP to a domain name without configuration: `crm.<YOUR_PUBLIC_IP>.nip.io` resolves automatically to `<YOUR_PUBLIC_IP>`.
+  ```bash
+  sudo certbot --nginx -d crm.<YOUR_PUBLIC_IP>.nip.io
+  ```
+
+---
+
+### Option B: Custom Domain HTTPS
+
+If you have a registered domain name (e.g. `crm.example.com`):
+
+1. **Create DNS A Record**: Point `crm.example.com` to your EC2 Public IPv4 address.
+2. **Obtain Standard Certificate**:
+   ```bash
+   sudo certbot --nginx -d crm.example.com
+   ```
+3. Symlink active certificate for Nginx:
+   ```bash
+   sudo ln -sfn /etc/letsencrypt/live/crm.example.com /etc/letsencrypt/live/enterprises-crm
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+---
+
+## 9. Local Development & Phone Testing Runbook
+
+For local development and mobile phone testing without AWS:
+
+### Why LAN HTTP (`http://192.168.1.x:3000`) Fails
+Modern mobile browsers (Chrome, Brave, Safari, Firefox) classify private network IP addresses (like `192.168.x.x` or `10.x.x.x`) over HTTP as **insecure contexts** (`window.isSecureContext === false`). The W3C Geolocation API is completely disabled, and calling `navigator.geolocation` results in `PERMISSION_DENIED: Only secure origins are allowed`.
+
+### The Solution: Cloudflare Quick Tunnel (`tunnel:dev`)
+The repository includes a single entry-point helper that exposes the local development server (`http://localhost:3000`) over a trusted, temporary HTTPS origin (`https://<random-words>.trycloudflare.com`).
+
+Because Vite is configured to proxy `/api`, `/health`, `/ready`, and `/socket.io` to the Fastify backend on port 4000, **both the frontend SPA and the backend REST + WebSocket API run through the single HTTPS origin!**
+
+### Step-by-Step Local Phone Testing Procedure:
+1. **Start the local CRM development servers**:
+   ```bash
+   pnpm dev
+   ```
+   (Wait until Vite is ready at `http://localhost:3000` and Fastify is listening on port 4000).
+
+2. **Start the Cloudflare tunnel in another terminal**:
+   ```bash
+   pnpm tunnel:dev
+   ```
+   Look for the generated temporary URL in the terminal, for example:
+   ```text
+   https://retailers-seats-burke-lived.trycloudflare.com
+   ```
+
+3. **Open on Phone Browser**:
+   * Navigate to `https://<tunnel-url>/technician` on your mobile phone (iOS Safari or Android Chrome/Brave).
+   * Notice `isSecureContext === true`! The browser prompts for location permission normally.
+   * Log in with technician credentials or test account.
+   * Click **Enable Location** or **Navigate** on an assigned job card.
+   * Allow GPS access when prompted by the operating system/browser.
+
+4. **Verify Live Tracking on Admin Desktop**:
+   * On your desktop computer, open:
+     `http://localhost:3000/technicians/map`
+     (or `https://<tunnel-url>/technicians/map`).
+   * Verify the technician's marker appears at your phone's real geographic location!
+   * Verify ETA, distance, and transit status update in real time.
+
+5. **Stop Tunnel When Done**:
+   * Press `Ctrl+C` in the tunnel terminal to cleanly shut down the temporary tunnel.
+
+---
+
+## 10. Verifying the Deployment
 
 Run the automated health check suite:
 ```bash
@@ -249,18 +349,18 @@ Nginx Reverse Proxy       : ACTIVE     (running)
 ```
 
 ### Manual Functional Checks
-1. **Admin Login & Dashboard**: Navigate to `https://crm.example.com/` and log in with Super Admin credentials.
-2. **Technician Portal**: Navigate to `https://crm.example.com/technician`. Verify OTP request sends an email, authenticates, and opens `/technician` without loading the Admin sidebar.
+1. **Admin Login & Dashboard**: Navigate to `https://<public-ip>/` and log in with Super Admin credentials.
+2. **Technician Portal**: Navigate to `https://<public-ip>/technician`. Verify OTP request sends an email, authenticates, and opens `/technician` without loading the Admin sidebar.
 3. **Live Geolocation Tracking**:
    * On mobile or device browser, technician clicks "Navigate" on an assigned service.
    * Device begins sending GPS updates via `navigator.geolocation.watchPosition()`.
-   * On Admin CRM -> Live Map (`/maps`), technician marker appears in realtime via Socket.IO `/maps` room.
+   * On Admin CRM -> Live Map (`/technicians/map`), technician marker appears in realtime via Socket.IO `/maps` room.
    * Check Redis (`redis-cli keys "tech_location:*"`): temporary location key exists with TTL <= 7200s.
    * Check PostgreSQL: no permanent GPS records written.
 
 ---
 
-## 10. Automated Maintenance & Operations
+## 11. Automated Maintenance & Operations
 
 ### Database Backups
 A nightly cron job (`/etc/cron.d/enterprises-crm-backup`) runs every day at 02:00 UTC:
@@ -293,7 +393,7 @@ sudo bash /opt/enterprises-crm/deploy/aws/rollback.sh HEAD~1
 
 ---
 
-## 11. Log Files & Troubleshooting
+## 12. Log Files & Troubleshooting
 
 | Component | Log Location / Command |
 | :--- | :--- |
@@ -302,19 +402,28 @@ sudo bash /opt/enterprises-crm/deploy/aws/rollback.sh HEAD~1
 | **Nginx Errors** | `/var/log/nginx/enterprises-crm-error.log` |
 | **PostgreSQL** | `/var/log/postgresql/postgresql-16-main.log` |
 | **Redis** | `/var/log/redis/redis-server.log` |
+| **Certbot IP Renewal** | `journalctl -u certbot-ip-renew -n 50` |
 | **Database Backups** | `/var/log/enterprises-crm/backup.log` |
 
-### Common Issues & Resolutions
-1. **502 Bad Gateway from Nginx**:
+### Common Issues & Diagnostic Resolutions
+1. **Geolocation Diagnostic: INSECURE_CONTEXT**:
+   * **Cause**: The application is being accessed over unencrypted HTTP (e.g. `http://<ip>:3000` or `http://192.168.x.x`).
+   * **Resolution**: Access the CRM via HTTPS (`https://<public-ip>/technician` or via `pnpm tunnel:dev`). The portal banner will automatically show a direct "Switch to HTTPS" button.
+2. **Geolocation Diagnostic: PERMISSION_DENIED**:
+   * **Cause**: The user denied browser location permissions.
+   * **Resolution**:
+     * **Chrome / Brave / Edge**: Click the site settings / lock icon in the address bar (left of URL) and switch **Location** to **Allow**, then tap "Retry".
+     * **iOS Safari**: Open iOS Settings &rarr; Safari &rarr; Location &rarr; Allow.
+3. **Geolocation Diagnostic: POSITION_UNAVAILABLE**:
+   * **Cause**: Device GPS hardware is disabled or unable to acquire satellites.
+   * **Resolution**: Turn on device Location in Android / iOS Quick Settings pull-down menu.
+4. **502 Bad Gateway from Nginx**:
    * Check if backend service is running: `sudo systemctl status enterprises-crm`.
    * Check if Fastify is listening on 127.0.0.1:4000: `ss -tulpn | grep 4000`.
    * Inspect recent crash logs: `journalctl -u enterprises-crm -e`.
-2. **Socket.IO Connection Failed**:
+5. **Socket.IO Connection Failed**:
    * Ensure Nginx configuration includes `proxy_set_header Upgrade $http_upgrade;` and `proxy_set_header Connection $connection_upgrade;`.
-   * Verify CORS allows the production domain in `/etc/enterprises-crm.env` (`CORS_ALLOWED_ORIGINS`).
-3. **Technician OTP Email Not Arriving**:
+   * Verify CORS allows the production domain/IP in `/etc/enterprises-crm.env` (`CORS_ALLOWED_ORIGINS`).
+6. **Technician OTP Email Not Arriving**:
    * Inspect SMTP settings in `/etc/enterprises-crm.env`.
    * If using Gmail, verify you are using an **App Password** with 2-factor authentication enabled, on port `465` with `ssl`.
-4. **Geolocation Not Triggering**:
-   * Geolocation requires a secure context (**HTTPS**). Ensure your site is served over SSL.
-   * Ensure the mobile device has granted location permission to the browser.

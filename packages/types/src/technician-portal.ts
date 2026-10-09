@@ -31,6 +31,7 @@ export interface Technician360Profile {
   portalAccess: 'ENABLED' | 'DISABLED';
   portalEnabled: boolean;
   emergencyContact?: string | null;
+  createdAt?: Date | string | null;
 }
 
 export interface TechnicianWorkSummary {
@@ -291,6 +292,7 @@ export interface TechnicianAssignedService {
   jobCardNumber?: string | null;
   jobCardStatus?: string | null;
   completedAt?: Date | string | null;
+  createdAt?: Date | string | null;
 }
 
 export interface TechnicianServiceHistoryItem {

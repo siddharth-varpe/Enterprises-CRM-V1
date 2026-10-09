@@ -292,4 +292,180 @@ describe('useTechnicianTracking Hook Suite', () => {
     // Verified: NO fake watcher started when denied
     expect(mockWatchPosition).not.toHaveBeenCalled();
   });
+
+  it('SECTION 9: accurately diagnoses INSECURE_CONTEXT and never calls navigator.geolocation', async () => {
+    // Simulate insecure context (e.g. accessed via unencrypted HTTP on LAN or remote IP)
+    const originalSecureContext = window.isSecureContext;
+    Object.defineProperty(window, 'isSecureContext', { value: false, configurable: true, writable: true });
+
+    const getCurrentPosSpy = vi.fn();
+    (navigator as any).geolocation.getCurrentPosition = getCurrentPosSpy;
+    mockWatchPosition.mockClear();
+
+    const { result } = renderHook(() => useTechnicianTracking('srv-101'));
+
+    expect(result.current.permissionState).toBe('insecure_context');
+    expect(result.current.diagnosticReason).toBe('INSECURE_CONTEXT');
+    expect(result.current.error).toContain('Geolocation requires a secure context (HTTPS)');
+    expect(result.current.diagnostics.isSecureContext).toBe(false);
+
+    // Calling requestPermission() in insecure context should immediately return false without calling navigator.geolocation
+    let granted: boolean = true;
+    await act(async () => {
+      granted = await result.current.requestPermission();
+    });
+
+    expect(granted).toBe(false);
+    expect(getCurrentPosSpy).not.toHaveBeenCalled();
+    expect(mockWatchPosition).not.toHaveBeenCalled();
+
+    // Calling startBrowserWatch() in insecure context should do nothing
+    act(() => {
+      result.current.startBrowserWatch();
+    });
+    expect(mockWatchPosition).not.toHaveBeenCalled();
+
+    // Restore original isSecureContext
+    Object.defineProperty(window, 'isSecureContext', { value: originalSecureContext, configurable: true, writable: true });
+  });
+
+  it('SECTION 9: diagnoses POSITION_UNAVAILABLE and TIMEOUT with descriptive guidance', async () => {
+    (navigator as any).geolocation.getCurrentPosition = vi.fn().mockImplementation((_success, error) => {
+      error({
+        code: 2, // POSITION_UNAVAILABLE
+        message: 'Position unavailable',
+      });
+    });
+
+    const { result } = renderHook(() => useTechnicianTracking('srv-101'));
+
+    await act(async () => {
+      await result.current.requestPermission();
+    });
+
+    expect(result.current.diagnosticReason).toBe('POSITION_UNAVAILABLE');
+    expect(result.current.error).toContain('Unable to determine location');
+    expect(result.current.diagnostics.errorCode).toBe(2);
+
+    // Now simulate timeout
+    (navigator as any).geolocation.getCurrentPosition = vi.fn().mockImplementation((_success, error) => {
+      error({
+        code: 3, // TIMEOUT
+        message: 'Timeout expired',
+      });
+    });
+
+    await act(async () => {
+      await result.current.requestPermission();
+    });
+
+    expect(result.current.diagnosticReason).toBe('TIMEOUT');
+    expect(result.current.error).toContain('Location request timed out');
+    expect(result.current.diagnostics.errorCode).toBe(3);
+  });
+
+  it('SECTION 9: exposes non-sensitive diagnostic details without raw coordinates', async () => {
+    const { result } = renderHook(() => useTechnicianTracking('srv-101'));
+
+    const diag = result.current.diagnostics;
+    expect(diag).toBeDefined();
+    expect(typeof diag.isSecureContext).toBe('boolean');
+    expect(typeof diag.hasGeolocation).toBe('boolean');
+    expect(typeof diag.protocol).toBe('string');
+    expect(typeof diag.origin).toBe('string');
+    expect(typeof diag.lastUpdateReachedBackend).toBe('boolean');
+
+    // Invariant: coordinates must never appear in diagnostics object
+    expect((diag as any).latitude).toBeUndefined();
+    expect((diag as any).longitude).toBeUndefined();
+    expect((diag as any).coords).toBeUndefined();
+  });
+
+  it('TEST B & H — handleNavigate acquires initial device GPS fix before opening external map, and catches permission denial', async () => {
+    (navigator as any).geolocation.getCurrentPosition = vi.fn().mockImplementation((_success, error) => {
+      error({
+        code: 1, // PERMISSION_DENIED
+        message: 'User denied Geolocation',
+      });
+    });
+
+    const { result } = renderHook(() => useTechnicianTracking('srv-101'));
+
+    await act(async () => {
+      await result.current.navigate('srv-101');
+    });
+
+    // When permission is denied, tracking status remains NOT_TRACKING rather than fake live tracking
+    expect(result.current.trackingStatus).toBe('NOT_TRACKING');
+    expect(result.current.isNavigating).toBe(false);
+    expect(result.current.error).toContain('Location permission was denied');
+    expect(mockWatchPosition).not.toHaveBeenCalled();
+  });
+
+  it('TEST 3 — Browser backgrounding: visibilitychange does NOT cancel active navigation or reset destination', async () => {
+    const { result } = renderHook(() => useTechnicianTracking('srv-101'));
+
+    await act(async () => {
+      await result.current.navigate('srv-101');
+    });
+
+    expect(result.current.isNavigating).toBe(true);
+    expect(result.current.trackingStatus).toBe('ON_THE_WAY');
+
+    // Simulate page becoming hidden (e.g. switching to Google Maps or locking screen)
+    act(() => {
+      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    // Navigation and destination MUST remain completely intact
+    expect(result.current.isNavigating).toBe(true);
+    expect(result.current.trackingStatus).toBe('ON_THE_WAY');
+    expect(result.current.destination?.serviceId).toBe('srv-101');
+  });
+
+  it('TEST 4 & 5 — Interruption and recovery: lack of GPS pings retains destination, and fresh GPS ping updates state', async () => {
+    let watchSuccessCb: any;
+    mockWatchPosition.mockImplementation((success) => {
+      watchSuccessCb = success;
+      return mockWatchPositionId;
+    });
+
+    const { result } = renderHook(() => useTechnicianTracking('srv-101'));
+
+    await act(async () => {
+      await result.current.navigate('srv-101');
+    });
+
+    expect(result.current.isNavigating).toBe(true);
+
+    // Simulate lack of updates (screen locked, browser throttled)
+    // Destination is strictly preserved
+    expect(result.current.destination).not.toBeNull();
+    expect(result.current.trackingStatus).toBe('ON_THE_WAY');
+
+    // Fresh GPS fix arrives (watchPosition callback fires with fresh coordinates)
+    await act(async () => {
+      if (watchSuccessCb) {
+        watchSuccessCb({
+          coords: {
+            latitude: 18.5205,
+            longitude: 73.8568,
+            accuracy: 8,
+          },
+          timestamp: Date.now(),
+        });
+      }
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/v1/maps/technician/location',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"latitude":18.5205'),
+      })
+    );
+    expect(result.current.trackingStatus).toBe('ON_THE_WAY');
+    expect(result.current.isNavigating).toBe(true);
+  });
 });

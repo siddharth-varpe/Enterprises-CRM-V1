@@ -22,6 +22,7 @@ import type {
   TechnicianPaymentSummary,
   TechnicianPersonalSummary,
 } from '@crm/types';
+import { SUPERADMIN_TECH_ID } from './technician-portal.constants';
 
 export class TechnicianPortalRepository {
   /**
@@ -387,6 +388,7 @@ export class TechnicianPortalRepository {
         portalAccess: portalEnabled ? 'ENABLED' : 'DISABLED',
         portalEnabled,
         emergencyContact: tech.emergencyContact || null,
+        createdAt: tech.createdAt || null,
       },
       workSummary: {
         assigned: summary.assignedCount,
@@ -416,7 +418,8 @@ export class TechnicianPortalRepository {
     view?: 'all' | 'today' | 'upcoming' | 'in_progress' | 'on_hold' | string,
     database = db
   ): Promise<TechnicianAssignedService[]> {
-    const conditions = [eq(services.technicianId, technicianId)];
+    const isSuperAdmin = technicianId === SUPERADMIN_TECH_ID;
+    const conditions = isSuperAdmin ? [] : [eq(services.technicianId, technicianId)];
 
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
@@ -472,6 +475,7 @@ export class TechnicianPortalRepository {
           status: services.status,
           customerNotes: services.customerNotes,
           completedAt: services.completedAt,
+          createdAt: services.createdAt,
           // Customer Context
           customerId: customers.id,
           customerName: customers.fullName,
@@ -500,18 +504,28 @@ export class TechnicianPortalRepository {
         .leftJoin(products, eq(customerAssets.productId, products.id))
         .leftJoin(jobCards, eq(services.id, jobCards.serviceId))
         .where(and(...conditions))
-        .orderBy(view === 'completed' ? desc(services.completedAt) : services.scheduledDate);
+        .orderBy(
+          view === 'completed'
+            ? desc(services.completedAt)
+            : desc(services.createdAt)
+        );
 
-      if (rows.length === 0 && memoryServices.some((s) => s.technicianId === technicianId)) {
+      if (rows.length === 0 && (memoryServices.some((s) => s.technicianId === technicianId) || (isSuperAdmin && memoryServices.length > 0))) {
         return memoryServices
           .filter((s) => {
-            if (s.technicianId !== technicianId || s.status === 'CANCELLED') return false;
+            if (!isSuperAdmin && s.technicianId !== technicianId) return false;
+            if (s.status === 'CANCELLED') return false;
             const linkedJc = memoryJobCards.find((j) => j.serviceId === s.id);
             if (view === 'on_hold') return linkedJc?.status === 'ON_HOLD';
             if (view === 'in_progress') return s.status === 'IN_PROGRESS' || linkedJc?.status === 'IN_PROGRESS';
             if (view === 'completed') return s.status === 'COMPLETED' || linkedJc?.status === 'COMPLETED';
             if (view === 'today') return s.status !== 'COMPLETED' && linkedJc?.status !== 'COMPLETED';
             return true;
+          })
+          .sort((a: any, b: any) => {
+            const timeA = new Date(a.createdAt || a.scheduledDate || 0).getTime();
+            const timeB = new Date(b.createdAt || b.scheduledDate || 0).getTime();
+            return timeB - timeA;
           })
           .map((s) => {
             const linkedJc = memoryJobCards.find((j) => j.serviceId === s.id);
@@ -526,6 +540,7 @@ export class TechnicianPortalRepository {
               jobCardStatus: linkedJc?.status || null,
               customerName: s.customerName || 'Customer',
               completedAt: s.completedAt || null,
+              createdAt: s.createdAt || null,
             };
           }) as unknown as TechnicianAssignedService[];
       }
@@ -625,7 +640,8 @@ export class TechnicianPortalRepository {
       }
 
       // Strict assignment check: must match the authenticated session's technician
-      if (!serviceRow.technicianId || serviceRow.technicianId !== technicianId) {
+      const isSuperAdmin = technicianId === SUPERADMIN_TECH_ID;
+      if (!isSuperAdmin && (!serviceRow.technicianId || serviceRow.technicianId !== technicianId)) {
         return { forbidden: true };
       }
 

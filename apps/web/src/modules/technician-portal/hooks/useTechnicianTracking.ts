@@ -1,20 +1,44 @@
 import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { resolveApiUrl, getApiBaseUrl } from '../../../lib/api-client';
+import { nativeTrackingBridge } from '../services/nativeTrackingBridge';
 
 export type TrackingStatus =
   | 'NOT_TRACKING'
+  | 'UNTRACKED'
   | 'LOCATION_PERMISSION'
   | 'TRACKING_READY'
+  | 'NAVIGATION_STARTING'
   | 'NAVIGATION_SELECTED'
   | 'ON_THE_WAY'
   | 'ARRIVAL_PENDING'
   | 'AT_CUSTOMER'
   | 'STALE'
   | 'OFFLINE'
+  | 'NAVIGATION_ERROR'
+  | 'NAVIGATION_ENDED'
   | 'STOPPED_ON_WAY';
 
-export type GeolocationPermissionState = 'prompt' | 'granted' | 'denied' | 'unsupported';
+export type GeolocationPermissionState = 'prompt' | 'granted' | 'denied' | 'unsupported' | 'insecure_context';
+
+export type DiagnosticReason =
+  | 'INSECURE_CONTEXT'
+  | 'PERMISSION_DENIED'
+  | 'POSITION_UNAVAILABLE'
+  | 'TIMEOUT'
+  | 'API_UNAVAILABLE'
+  | null;
+
+export interface TrackingDiagnostics {
+  isSecureContext: boolean;
+  hasGeolocation: boolean;
+  protocol: string;
+  origin: string;
+  permissionQueryState: string | null;
+  errorCode: number | null;
+  diagnosticReason: DiagnosticReason;
+  lastUpdateReachedBackend: boolean;
+}
 
 export interface ActiveDestination {
   serviceId: string;
@@ -42,6 +66,8 @@ export interface TechnicianTrackingState {
   error: string | null;
   permissionState: GeolocationPermissionState;
   isWatching: boolean;
+  diagnosticReason: DiagnosticReason;
+  diagnostics: TrackingDiagnostics;
 }
 
 export interface ConflictModalState {
@@ -63,10 +89,13 @@ export interface TechnicianTrackingContextValue {
   error: string | null;
   permissionState: GeolocationPermissionState;
   isWatching: boolean;
+  diagnosticReason: DiagnosticReason;
+  diagnostics: TrackingDiagnostics;
   conflictModal: ConflictModalState | null;
   dismissConflictModal: () => void;
+  closeConflictModal?: () => void;
   confirmSwitchDestination: () => void;
-  navigate: (serviceId: string) => Promise<{ success?: boolean; conflict?: boolean; error?: string; googleMapsUrl?: string }>;
+  navigate: (serviceId: string, confirmSwitch?: boolean) => Promise<{ success?: boolean; conflict?: boolean; error?: string; googleMapsUrl?: string }>;
   stopTracking: () => Promise<void>;
   requestPermission: () => Promise<boolean>;
   startBrowserWatch: (serviceId?: string) => void;
@@ -81,20 +110,81 @@ export function _resetSharedTrackingStateForTesting() {
   sharedSocket = null;
 }
 
+/**
+ * Validates whether the execution environment satisfies W3C Secure Context requirements.
+ * Modern browsers strictly require a secure origin (HTTPS or localhost/127.0.0.1)
+ * to access navigator.geolocation.
+ */
+export function isContextSecure(): boolean {
+  if (typeof window === 'undefined') return true;
+  if (typeof window.isSecureContext === 'boolean') {
+    return window.isSecureContext;
+  }
+  const { protocol, hostname } = window.location;
+  if (protocol === 'https:') return true;
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') return true;
+  return false;
+}
+
+function getInitialDiagnostics(): TrackingDiagnostics {
+  const isSecure = isContextSecure();
+  const hasGeo = typeof window !== 'undefined' && typeof navigator !== 'undefined' && Boolean(navigator.geolocation);
+  const protocol = typeof window !== 'undefined' ? window.location.protocol : '';
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
+  let initialReason: DiagnosticReason = null;
+  if (!isSecure) {
+    initialReason = 'INSECURE_CONTEXT';
+  } else if (!hasGeo) {
+    initialReason = 'API_UNAVAILABLE';
+  }
+
+  return {
+    isSecureContext: isSecure,
+    hasGeolocation: hasGeo,
+    protocol,
+    origin,
+    permissionQueryState: null,
+    errorCode: null,
+    diagnosticReason: initialReason,
+    lastUpdateReachedBackend: false,
+  };
+}
+
 const TechnicianTrackingContext = createContext<TechnicianTrackingContextValue | null>(null);
 
 function useTrackingInternal(currentServiceId?: string, isProvider = false): TechnicianTrackingContextValue {
-  const [state, setState] = useState<TechnicianTrackingState>({
-    isNavigating: false,
-    activeServiceId: null,
-    trackingStatus: 'NOT_TRACKING',
-    destination: null,
-    distanceText: null,
-    etaText: null,
-    lastUpdate: null,
-    error: null,
-    permissionState: 'prompt',
-    isWatching: false,
+  const [state, setState] = useState<TechnicianTrackingState>(() => {
+    const diag = getInitialDiagnostics();
+    const isSecure = diag.isSecureContext;
+    const hasGeo = diag.hasGeolocation;
+
+    let initialPerm: GeolocationPermissionState = 'prompt';
+    let initialError: string | null = null;
+
+    if (!isSecure) {
+      initialPerm = 'insecure_context';
+      const host = typeof window !== 'undefined' ? window.location.host : '<domain-or-ip>';
+      initialError = `Geolocation requires a secure context (HTTPS). This site is being accessed over insecure HTTP. Access via https://${host} instead.`;
+    } else if (!hasGeo) {
+      initialPerm = 'unsupported';
+      initialError = 'Geolocation is not supported by this browser.';
+    }
+
+    return {
+      isNavigating: false,
+      activeServiceId: null,
+      trackingStatus: 'NOT_TRACKING',
+      destination: null,
+      distanceText: null,
+      etaText: null,
+      lastUpdate: null,
+      error: initialError,
+      permissionState: initialPerm,
+      isWatching: false,
+      diagnosticReason: diag.diagnosticReason,
+      diagnostics: diag,
+    };
   });
 
   const [conflictModal, setConflictModal] = useState<ConflictModalState | null>(null);
@@ -139,6 +229,10 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
             distanceText: res.record.distanceText ?? prev.distanceText,
             etaText: res.record.etaText ?? prev.etaText,
             lastUpdate: res.record.lastUpdate ?? Date.now(),
+            diagnostics: {
+              ...prev.diagnostics,
+              lastUpdateReachedBackend: true,
+            },
           }));
         }
       });
@@ -160,20 +254,64 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
               distanceText: json.data.distanceText ?? prev.distanceText,
               etaText: json.data.etaText ?? prev.etaText,
               lastUpdate: json.data.lastUpdate ?? Date.now(),
+              diagnostics: {
+                ...prev.diagnostics,
+                lastUpdateReachedBackend: true,
+              },
             }));
           }
+        } else {
+          setState((prev) => ({
+            ...prev,
+            diagnostics: {
+              ...prev.diagnostics,
+              lastUpdateReachedBackend: false,
+            },
+          }));
         }
-      } catch {}
+      } catch {
+        setState((prev) => ({
+          ...prev,
+          diagnostics: {
+            ...prev.diagnostics,
+            lastUpdateReachedBackend: false,
+          },
+        }));
+      }
     }
   }, []);
 
   // Continuous geolocation watch using navigator.geolocation.watchPosition
   const startBrowserWatch = useCallback((_serviceId?: string) => {
+    // 1. INSECURE CONTEXT: Never call navigator.geolocation
+    if (!isContextSecure()) {
+      const host = typeof window !== 'undefined' ? window.location.host : '<domain-or-ip>';
+      const errorMsg = `Geolocation requires a secure context (HTTPS). This site is being accessed over insecure HTTP. Access via https://${host} instead.`;
+      setState((prev) => ({
+        ...prev,
+        permissionState: 'insecure_context',
+        diagnosticReason: 'INSECURE_CONTEXT',
+        error: errorMsg,
+        diagnostics: {
+          ...prev.diagnostics,
+          isSecureContext: false,
+          diagnosticReason: 'INSECURE_CONTEXT',
+        },
+      }));
+      return;
+    }
+
     if (typeof window === 'undefined' || typeof navigator === 'undefined' || !navigator.geolocation) {
       setState((prev) => ({
         ...prev,
         permissionState: 'unsupported',
-        error: 'Geolocation is not supported by your browser',
+        diagnosticReason: 'API_UNAVAILABLE',
+        error: 'Geolocation is not supported by this browser.',
+        diagnostics: {
+          ...prev.diagnostics,
+          hasGeolocation: false,
+          diagnosticReason: 'API_UNAVAILABLE',
+        },
       }));
       return;
     }
@@ -189,20 +327,38 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
           setState((prev) => ({
             ...prev,
             permissionState: 'granted',
+            diagnosticReason: null,
             isWatching: true,
             error: null,
             trackingStatus: prev.trackingStatus === 'NOT_TRACKING' ? 'TRACKING_READY' : prev.trackingStatus,
+            diagnostics: {
+              ...prev.diagnostics,
+              permissionQueryState: 'granted',
+              diagnosticReason: null,
+              errorCode: null,
+            },
           }));
           sendLocationPing(pos);
         },
         (err) => {
+          let reason: DiagnosticReason = null;
+          let errorMsg = 'Location tracking error.';
           if (err.code === 1) {
             // PERMISSION_DENIED
+            reason = 'PERMISSION_DENIED';
+            errorMsg = 'Location permission was denied. Please enable location access in your browser settings (look for the lock or site settings icon in the address bar).';
             setState((prev) => ({
               ...prev,
               permissionState: 'denied',
+              diagnosticReason: 'PERMISSION_DENIED',
               isWatching: false,
-              error: 'Location permission was denied. Please allow location access in your browser settings.',
+              error: errorMsg,
+              diagnostics: {
+                ...prev.diagnostics,
+                permissionQueryState: 'denied',
+                diagnosticReason: 'PERMISSION_DENIED',
+                errorCode: 1,
+              },
             }));
             if (sharedWatchId !== null) {
               navigator.geolocation.clearWatch(sharedWatchId);
@@ -210,13 +366,32 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
             }
           } else if (err.code === 2) {
             // POSITION_UNAVAILABLE
+            reason = 'POSITION_UNAVAILABLE';
+            errorMsg = 'Unable to determine location. Please ensure device location/GPS is enabled.';
             setState((prev) => ({
               ...prev,
-              error: 'Device GPS location is currently unavailable. Please verify GPS is enabled.',
+              diagnosticReason: 'POSITION_UNAVAILABLE',
+              error: errorMsg,
+              diagnostics: {
+                ...prev.diagnostics,
+                diagnosticReason: 'POSITION_UNAVAILABLE',
+                errorCode: 2,
+              },
             }));
           } else if (err.code === 3) {
             // TIMEOUT
-            console.warn('[Geolocation] watchPosition timeout notice');
+            reason = 'TIMEOUT';
+            errorMsg = 'Location request timed out. Retrying...';
+            setState((prev) => ({
+              ...prev,
+              diagnosticReason: 'TIMEOUT',
+              error: errorMsg,
+              diagnostics: {
+                ...prev.diagnostics,
+                diagnosticReason: 'TIMEOUT',
+                errorCode: 3,
+              },
+            }));
           }
         },
         {
@@ -228,17 +403,63 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
 
       setState((prev) => ({ ...prev, isWatching: true, permissionState: 'granted' }));
     } catch (err: any) {
-      console.warn('[Geolocation] Failed to establish watchPosition:', err?.message);
+      console.warn('[TechnicianTracking] Failed to establish watchPosition:', err?.message);
     }
   }, [sendLocationPing]);
 
   // Request browser geolocation permission and acquire initial location fix
   const requestPermission = useCallback(async (): Promise<boolean> => {
+    // 0. NATIVE PLATFORM: Use native runtime permissions
+    if (nativeTrackingBridge.isAvailable()) {
+      const granted = await nativeTrackingBridge.requestPermissions();
+      if (granted) {
+        setState((prev) => ({
+          ...prev,
+          permissionState: 'granted',
+          diagnosticReason: null,
+          error: null,
+        }));
+        return true;
+      } else {
+        setState((prev) => ({
+          ...prev,
+          permissionState: 'denied',
+          diagnosticReason: 'PERMISSION_DENIED',
+          error: 'Location permission was denied in device settings.',
+        }));
+        return false;
+      }
+    }
+
+    // 1. INSECURE CONTEXT: Immediately diagnose without calling navigator.geolocation
+    if (!isContextSecure()) {
+      const host = typeof window !== 'undefined' ? window.location.host : '<domain-or-ip>';
+      const errorMsg = `Geolocation requires a secure context (HTTPS). This site is being accessed over insecure HTTP. Access via https://${host} instead.`;
+      setState((prev) => ({
+        ...prev,
+        permissionState: 'insecure_context',
+        diagnosticReason: 'INSECURE_CONTEXT',
+        error: errorMsg,
+        diagnostics: {
+          ...prev.diagnostics,
+          isSecureContext: false,
+          diagnosticReason: 'INSECURE_CONTEXT',
+        },
+      }));
+      return false;
+    }
+
     if (typeof window === 'undefined' || typeof navigator === 'undefined' || !navigator.geolocation) {
       setState((prev) => ({
         ...prev,
         permissionState: 'unsupported',
-        error: 'Geolocation is not supported by your browser',
+        diagnosticReason: 'API_UNAVAILABLE',
+        error: 'Geolocation is not supported by this browser.',
+        diagnostics: {
+          ...prev.diagnostics,
+          hasGeolocation: false,
+          diagnosticReason: 'API_UNAVAILABLE',
+        },
       }));
       return false;
     }
@@ -254,32 +475,46 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
           setState((prev) => ({
             ...prev,
             permissionState: 'granted',
+            diagnosticReason: null,
             error: null,
             trackingStatus: prev.trackingStatus === 'NOT_TRACKING' ? 'TRACKING_READY' : prev.trackingStatus,
+            diagnostics: {
+              ...prev.diagnostics,
+              permissionQueryState: 'granted',
+              diagnosticReason: null,
+              errorCode: null,
+            },
           }));
           await sendLocationPing(pos);
           startBrowserWatch();
           resolve(true);
         },
         (err) => {
+          let reason: DiagnosticReason = null;
+          let errorMsg = 'Location acquisition failed.';
           if (err.code === 1) {
-            setState((prev) => ({
-              ...prev,
-              permissionState: 'denied',
-              isWatching: false,
-              error: 'Location permission was denied. Please allow location access in your browser settings.',
-            }));
+            reason = 'PERMISSION_DENIED';
+            errorMsg = 'Location permission was denied. Please enable location access in your browser settings (look for the lock or site settings icon in the address bar).';
           } else if (err.code === 2) {
-            setState((prev) => ({
-              ...prev,
-              error: 'Device GPS position is currently unavailable. Please verify GPS is enabled.',
-            }));
+            reason = 'POSITION_UNAVAILABLE';
+            errorMsg = 'Unable to determine location. Please ensure device location/GPS is enabled.';
           } else if (err.code === 3) {
-            setState((prev) => ({
-              ...prev,
-              error: 'GPS acquisition timed out. Retrying...',
-            }));
+            reason = 'TIMEOUT';
+            errorMsg = 'Location request timed out. Retrying...';
           }
+
+          setState((prev) => ({
+            ...prev,
+            permissionState: err.code === 1 ? 'denied' : prev.permissionState,
+            diagnosticReason: reason,
+            error: errorMsg,
+            diagnostics: {
+              ...prev.diagnostics,
+              errorCode: err.code,
+              diagnosticReason: reason,
+              permissionQueryState: err.code === 1 ? 'denied' : prev.diagnostics.permissionQueryState,
+            },
+          }));
           resolve(false);
         },
         {
@@ -314,7 +549,7 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
           }));
 
           // If tracking was active and no watcher is running, restart watchPosition
-          if (sharedWatchId === null && typeof navigator !== 'undefined' && navigator.geolocation) {
+          if (sharedWatchId === null && typeof navigator !== 'undefined' && navigator.geolocation && isContextSecure()) {
             startBrowserWatch(dest.serviceId);
           }
         } else {
@@ -335,9 +570,39 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
     let isMounted = true;
 
     async function initLocationCapability() {
+      // 1. INSECURE CONTEXT: Diagnose immediately, do not prompt or query
+      if (!isContextSecure()) {
+        if (isMounted) {
+          const host = typeof window !== 'undefined' ? window.location.host : '<domain-or-ip>';
+          const errorMsg = `Geolocation requires a secure context (HTTPS). This site is being accessed over insecure HTTP. Access via https://${host} instead.`;
+          setState((prev) => ({
+            ...prev,
+            permissionState: 'insecure_context',
+            diagnosticReason: 'INSECURE_CONTEXT',
+            error: errorMsg,
+            diagnostics: {
+              ...prev.diagnostics,
+              isSecureContext: false,
+              diagnosticReason: 'INSECURE_CONTEXT',
+            },
+          }));
+        }
+        return;
+      }
+
       if (typeof window === 'undefined' || typeof navigator === 'undefined' || !navigator.geolocation) {
         if (isMounted) {
-          setState((prev) => ({ ...prev, permissionState: 'unsupported' }));
+          setState((prev) => ({
+            ...prev,
+            permissionState: 'unsupported',
+            diagnosticReason: 'API_UNAVAILABLE',
+            error: 'Geolocation is not supported by this browser.',
+            diagnostics: {
+              ...prev.diagnostics,
+              hasGeolocation: false,
+              diagnosticReason: 'API_UNAVAILABLE',
+            },
+          }));
         }
         return;
       }
@@ -349,31 +614,70 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
           if (!isMounted) return;
 
           if (permStatus.state === 'granted') {
-            setState((prev) => ({ ...prev, permissionState: 'granted' }));
+            setState((prev) => ({
+              ...prev,
+              permissionState: 'granted',
+              diagnostics: {
+                ...prev.diagnostics,
+                permissionQueryState: 'granted',
+              },
+            }));
             startBrowserWatch();
           } else if (permStatus.state === 'prompt') {
-            setState((prev) => ({ ...prev, permissionState: 'prompt' }));
-            // Trigger native prompt
-            requestPermission();
+            // Keep prompt state without unprompted getCurrentPosition call (user can click Enable Location)
+            setState((prev) => ({
+              ...prev,
+              permissionState: 'prompt',
+              diagnostics: {
+                ...prev.diagnostics,
+                permissionQueryState: 'prompt',
+              },
+            }));
           } else if (permStatus.state === 'denied') {
+            const errorMsg = 'Location permission was denied. Please enable location access in your browser settings (look for the lock or site settings icon in the address bar).';
             setState((prev) => ({
               ...prev,
               permissionState: 'denied',
-              error: 'Location permission was denied. Please allow location access in your browser settings.',
+              diagnosticReason: 'PERMISSION_DENIED',
+              error: errorMsg,
+              diagnostics: {
+                ...prev.diagnostics,
+                permissionQueryState: 'denied',
+                diagnosticReason: 'PERMISSION_DENIED',
+                errorCode: 1,
+              },
             }));
           }
 
           permStatus.onchange = () => {
             if (!isMounted) return;
             if (permStatus.state === 'granted') {
-              setState((prev) => ({ ...prev, permissionState: 'granted', error: null }));
+              setState((prev) => ({
+                ...prev,
+                permissionState: 'granted',
+                diagnosticReason: null,
+                error: null,
+                diagnostics: {
+                  ...prev.diagnostics,
+                  permissionQueryState: 'granted',
+                  diagnosticReason: null,
+                },
+              }));
               startBrowserWatch();
             } else if (permStatus.state === 'denied') {
+              const errorMsg = 'Location permission was denied. Please enable location access in your browser settings (look for the lock or site settings icon in the address bar).';
               setState((prev) => ({
                 ...prev,
                 permissionState: 'denied',
+                diagnosticReason: 'PERMISSION_DENIED',
                 isWatching: false,
-                error: 'Location permission was denied. Please allow location access in your browser settings.',
+                error: errorMsg,
+                diagnostics: {
+                  ...prev.diagnostics,
+                  permissionQueryState: 'denied',
+                  diagnosticReason: 'PERMISSION_DENIED',
+                  errorCode: 1,
+                },
               }));
               if (sharedWatchId !== null) {
                 navigator.geolocation.clearWatch(sharedWatchId);
@@ -387,8 +691,10 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
         }
       }
 
-      // Fallback: prompt directly via requestPermission
-      requestPermission();
+      // Fallback: stay in prompt state until user clicks button
+      if (isMounted) {
+        setState((prev) => ({ ...prev, permissionState: 'prompt' }));
+      }
     }
 
     if (isProvider) {
@@ -405,12 +711,84 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
         sharedWatchId = null;
       }
     };
-  }, [isProvider, startBrowserWatch, requestPermission, checkActiveTracking]);
+  }, [isProvider, startBrowserWatch, checkActiveTracking]);
 
   // Navigate trigger action
   const handleNavigate = useCallback(
     async (targetServiceId: string, confirmSwitch = false) => {
-      setState((prev) => ({ ...prev, error: null }));
+      setState((prev) => ({ ...prev, error: null, trackingStatus: 'NAVIGATION_STARTING' }));
+
+      // 1. Verify Secure Context & Geolocation API Availability
+      if (!isContextSecure()) {
+        const host = typeof window !== 'undefined' ? window.location.host : '<domain-or-ip>';
+        const errorMsg = `Geolocation requires a secure context (HTTPS). This site is being accessed over insecure HTTP. Access via https://${host} instead.`;
+        setState((prev) => ({
+          ...prev,
+          permissionState: 'insecure_context',
+          diagnosticReason: 'INSECURE_CONTEXT',
+          trackingStatus: 'NOT_TRACKING',
+          error: errorMsg,
+          diagnostics: {
+            ...prev.diagnostics,
+            isSecureContext: false,
+            diagnosticReason: 'INSECURE_CONTEXT',
+          },
+        }));
+        return { success: false, error: errorMsg };
+      }
+
+      if (typeof window === 'undefined' || typeof navigator === 'undefined' || !navigator.geolocation) {
+        const errorMsg = 'Geolocation is not supported by this browser.';
+        setState((prev) => ({
+          ...prev,
+          permissionState: 'unsupported',
+          diagnosticReason: 'API_UNAVAILABLE',
+          trackingStatus: 'NOT_TRACKING',
+          error: errorMsg,
+          diagnostics: {
+            ...prev.diagnostics,
+            hasGeolocation: false,
+            diagnosticReason: 'API_UNAVAILABLE',
+          },
+        }));
+        return { success: false, error: errorMsg };
+      }
+
+      // 2. Acquire immediate device GPS location fix before backgrounding tab to external maps
+      let initialPos: GeolocationPosition | null = null;
+      if (typeof navigator.geolocation.getCurrentPosition === 'function') {
+        try {
+          initialPos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 5000,
+            });
+          });
+          // Immediately transmit fresh coordinates to backend
+          await sendLocationPing(initialPos);
+        } catch (geoErr: any) {
+          if (geoErr?.code === 1) {
+            // PERMISSION_DENIED
+            const errorMsg = 'Location permission was denied. Please enable location access in your browser settings to start live tracking.';
+            setState((prev) => ({
+              ...prev,
+              permissionState: 'denied',
+              diagnosticReason: 'PERMISSION_DENIED',
+              trackingStatus: 'NOT_TRACKING',
+              error: errorMsg,
+              diagnostics: {
+                ...prev.diagnostics,
+                permissionQueryState: 'denied',
+                diagnosticReason: 'PERMISSION_DENIED',
+                errorCode: 1,
+              },
+            }));
+            return { success: false, error: errorMsg };
+          }
+          console.warn('[TechnicianTracking] Pre-navigation getCurrentPosition notice:', geoErr?.message);
+        }
+      }
 
       try {
         const res = await fetch(resolveApiUrl('/maps/technician/navigate'), {
@@ -420,6 +798,8 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
           body: JSON.stringify({
             serviceId: targetServiceId,
             confirmSwitch,
+            latitude: initialPos?.coords.latitude,
+            longitude: initialPos?.coords.longitude,
           }),
         });
 
@@ -459,6 +839,27 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
         // Continue/ensure existing browser watch is active (does not duplicate)
         startBrowserWatch(targetServiceId);
 
+        // If we acquired an initial position, send an updated ping with the active destination confirmed
+        if (initialPos) {
+          sendLocationPing(initialPos).catch(() => {});
+        }
+
+        // If running on native Android app, start native Foreground Location Service
+        if (nativeTrackingBridge.isAvailable() && json.navSessionToken) {
+          try {
+            const apiBase = getApiBaseUrl() || (typeof window !== 'undefined' ? window.location.origin : '');
+            const targetApiUrl = `${apiBase.replace(/\/+$/, '')}/api/v1`;
+            await nativeTrackingBridge.startTracking({
+              apiUrl: targetApiUrl,
+              token: json.navSessionToken,
+              serviceId: targetServiceId,
+              technicianName: dest?.customerName ? `Destination: ${dest.customerName}` : undefined,
+            });
+          } catch (natErr: any) {
+            console.warn('[TechnicianTracking] Native service start notice:', natErr?.message);
+          }
+        }
+
         // Open Google Maps external navigation URL
         if (json.googleMapsUrl) {
           window.open(json.googleMapsUrl, '_blank', 'noopener,noreferrer');
@@ -471,11 +872,19 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
         return { success: false, error: msg };
       }
     },
-    [startBrowserWatch]
+    [startBrowserWatch, sendLocationPing]
   );
 
   // Stop tracking action
   const handleStopTracking = useCallback(async () => {
+    if (nativeTrackingBridge.isAvailable()) {
+      try {
+        await nativeTrackingBridge.stopTracking();
+      } catch (natErr: any) {
+        console.warn('[TechnicianTracking] Native service stop notice:', natErr?.message);
+      }
+    }
+
     if (sharedWatchId !== null && typeof navigator !== 'undefined') {
       navigator.geolocation.clearWatch(sharedWatchId);
       sharedWatchId = null;
@@ -514,6 +923,7 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
     ),
     conflictModal,
     dismissConflictModal: () => setConflictModal(null),
+    closeConflictModal: () => setConflictModal(null),
     confirmSwitchDestination: () => {
       if (conflictModal) {
         const nextId = conflictModal.pendingServiceId;
@@ -521,7 +931,7 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
         handleNavigate(nextId, true);
       }
     },
-    navigate: (serviceId: string) => handleNavigate(serviceId, false),
+    navigate: (serviceId: string, confirmSwitch = false) => handleNavigate(serviceId, confirmSwitch),
     stopTracking: handleStopTracking,
     requestPermission,
     startBrowserWatch,
@@ -559,11 +969,12 @@ export function useTechnicianTracking(currentServiceId?: string) {
       isThisServiceActive: Boolean(
         currentServiceId && context.state.isNavigating && context.state.activeServiceId === currentServiceId
       ),
-      navigate: (serviceId: string) => context.navigate(serviceId),
+      navigate: (serviceId: string, confirmSwitch = false) => context.navigate(serviceId, confirmSwitch),
       stopTracking: context.stopTracking,
       requestPermission: context.requestPermission,
       startBrowserWatch: context.startBrowserWatch,
       dismissConflictModal: context.dismissConflictModal,
+      closeConflictModal: context.closeConflictModal || context.dismissConflictModal,
       confirmSwitchDestination: context.confirmSwitchDestination,
     };
   }

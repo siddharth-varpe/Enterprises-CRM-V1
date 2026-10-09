@@ -9,6 +9,7 @@ import { TechnicianServiceDetailPage } from './pages/TechnicianServiceDetailPage
 import { TechnicianCompletedServicesPage } from './pages/TechnicianCompletedServicesPage';
 import { TechnicianProfilePage } from './pages/TechnicianProfilePage';
 import { TechnicianNotificationsPage } from './pages/TechnicianNotificationsPage';
+import { TechnicianActiveNavigationPage } from './pages/TechnicianActiveNavigationPage';
 
 /**
  * Technician Portal Root Router
@@ -18,6 +19,7 @@ import { TechnicianNotificationsPage } from './pages/TechnicianNotificationsPage
  * - /technician/login
  * - /technician (My Work)
  * - /technician/services (Assigned Services)
+ * - /technician/navigation (Active Navigation)
  * - /technician/completed-services (Completed Services)
  * - /technician/profile (Technician Profile)
  * - /technician/notifications (Operational Notifications)
@@ -49,6 +51,7 @@ export const TechnicianPortalRouter: React.FC = () => {
           <Route index element={<TechnicianDashboardPage />} />
           <Route path="services" element={<TechnicianServicesPage />} />
           <Route path="services/:id" element={<TechnicianServiceDetailPage />} />
+          <Route path="navigation" element={<TechnicianActiveNavigationPage />} />
           <Route path="completed-services" element={<TechnicianCompletedServicesPage />} />
           <Route path="profile" element={<TechnicianProfilePage />} />
           <Route path="notifications" element={<TechnicianNotificationsPage />} />

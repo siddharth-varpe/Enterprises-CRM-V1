@@ -95,12 +95,23 @@ export function buildApp(opts: FastifyServerOptions = {}): FastifyInstance {
       if (!isAllowed) {
         try {
           const parsed = new URL(origin);
-          // Allow trusted preview/production deployments
-          if (
-            parsed.hostname.endsWith('.onrender.com') ||
-            parsed.hostname.endsWith('.vercel.app')
-          ) {
-            isAllowed = true;
+          // In production, strictly restrict preview subdomains to those matching this specific project prefix
+          const knownHosts = [
+            env.WEB_URL ? new URL(env.WEB_URL).hostname : null,
+            process.env.RENDER_EXTERNAL_URL ? new URL(process.env.RENDER_EXTERNAL_URL).hostname : null,
+          ].filter(Boolean) as string[];
+
+          for (const knownHost of knownHosts) {
+            const projectPrefix = knownHost.split('.')[0];
+            if (
+              projectPrefix &&
+              projectPrefix.length >= 3 &&
+              parsed.hostname.startsWith(`${projectPrefix}-`) &&
+              (parsed.hostname.endsWith('.onrender.com') || parsed.hostname.endsWith('.vercel.app'))
+            ) {
+              isAllowed = true;
+              break;
+            }
           }
         } catch {}
       }

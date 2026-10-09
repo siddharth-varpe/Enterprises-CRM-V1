@@ -53,7 +53,8 @@ Thumbs.db
 .crm-data/
 apps/api/.crm-data/
 scratch/
-cookies.txt
+*cookies.txt
+scripts/bin/
 scripts/mailer/outbox/
 D:/
 

@@ -13,6 +13,7 @@ import { getCookieOptions, getClearCookieOptions, AUTH_COOKIE_NAME } from '../..
 import { logSecurityAudit } from '../../security/audit';
 import { authenticate } from '../../middleware/auth';
 import { getRolePermissionKeys } from '../../middleware/rbac';
+import { env } from '../../config/env';
 
 // Pre-computed dummy hash to prevent timing attacks on non-existent users
 let dummyHash = '';
@@ -244,34 +245,38 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const cleanPassword = body.password.trim();
     const unameLower = userRecord.username.toLowerCase();
 
-    if (unameLower === 'admin') {
-      const allowedAdminPasswords = [
-        'admin',
-        'Admin@1234',
-        'admin@1234',
-        'Admin@123456',
-        'admin@123456',
-        'Admin@12345',
-        'admin@12345',
-        'Admin@123',
-        'admin123',
-        'Password@12345',
-        'password',
-        'Admin123!',
-        'admin@123',
-      ];
-      if (allowedAdminPasswords.includes(cleanPassword)) {
-        isPasswordValid = true;
-      }
-    } else if (unameLower === 'staff' || unameLower === 'manager') {
-      const allowedStaffPasswords = ['staff', 'manager', 'Manager@1234', 'Staff@1234', 'Staff@12345', 'staff123', 'Password@12345'];
-      if (allowedStaffPasswords.includes(cleanPassword)) {
-        isPasswordValid = true;
-      }
-    } else if (unameLower === 'technician' || unameLower === 'tech1') {
-      const allowedTechPasswords = ['technician', 'tech1', 'Tech@1234', 'Tech@12345', 'technician123', 'Password@12345'];
-      if (allowedTechPasswords.includes(cleanPassword)) {
-        isPasswordValid = true;
+    // In development and testing only, allow convenience credentials for standard seeded accounts.
+    // In production, strictly enforce Argon2id verification against stored passwordHash.
+    if (env.NODE_ENV !== 'production') {
+      if (unameLower === 'admin') {
+        const allowedAdminPasswords = [
+          'admin',
+          'Admin@1234',
+          'admin@1234',
+          'Admin@123456',
+          'admin@123456',
+          'Admin@12345',
+          'admin@12345',
+          'Admin@123',
+          'admin123',
+          'Password@12345',
+          'password',
+          'Admin123!',
+          'admin@123',
+        ];
+        if (allowedAdminPasswords.includes(cleanPassword)) {
+          isPasswordValid = true;
+        }
+      } else if (unameLower === 'staff' || unameLower === 'manager') {
+        const allowedStaffPasswords = ['staff', 'manager', 'Manager@1234', 'Staff@1234', 'Staff@12345', 'staff123', 'Password@12345'];
+        if (allowedStaffPasswords.includes(cleanPassword)) {
+          isPasswordValid = true;
+        }
+      } else if (unameLower === 'technician' || unameLower === 'tech1') {
+        const allowedTechPasswords = ['technician', 'tech1', 'Tech@1234', 'Tech@12345', 'technician123', 'Password@12345'];
+        if (allowedTechPasswords.includes(cleanPassword)) {
+          isPasswordValid = true;
+        }
       }
     }
 

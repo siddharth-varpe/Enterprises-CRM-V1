@@ -15,6 +15,9 @@ import {
   TECHNICIAN_ERROR_CODES,
   HTTP_STATUS,
 } from '@crm/shared';
+import { AUTH_COOKIE_NAME, LEGACY_AUTH_COOKIE_NAME } from '../../security/cookies';
+import { getRedisClient } from '../../redis/client';
+import { getSession } from '../../security/session';
 import {
   TechnicianLoginSchema,
   TechnicianVerifyOtpSchema,
@@ -194,6 +197,61 @@ export const technicianAuthRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   /**
+   * POST /api/v1/technician-auth/superadmin-bypass
+   * Temporary Super Admin bypass for technician portal instant access
+   */
+  fastify.post('/superadmin-bypass', async (request: FastifyRequest, reply: FastifyReply) => {
+    const reqIp = (request.headers['x-forwarded-for'] as string) || request.ip || '127.0.0.1';
+    const userAgent = (request.headers['user-agent'] as string) || undefined;
+    const { technicianId } = (request.body as any) || {};
+
+    try {
+      const { sessionId, sessionData } = await technicianAuthService.createSuperAdminBypassSession({
+        ipAddress: reqIp,
+        userAgent,
+        technicianId,
+      });
+
+      const isProduction = env.NODE_ENV === 'production';
+      reply.setCookie(TECHNICIAN_AUTH_COOKIE_NAME, sessionId, {
+        path: '/',
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: TECHNICIAN_SESSION_TTL_SECONDS,
+        expires: new Date(Date.now() + TECHNICIAN_SESSION_TTL_SECONDS * 1000),
+      });
+
+      return reply.status(HTTP_STATUS.OK).send({
+        success: true,
+        message: 'Super Admin technician portal bypass activated',
+        data: {
+          sessionToken: sessionId,
+          technician: {
+            id: sessionData.technicianId,
+            technicianId: sessionData.technicianId,
+            fullName: sessionData.fullName,
+            phone: sessionData.phone,
+            email: sessionData.email,
+            role: sessionData.role,
+            portalEnabled: sessionData.portalEnabled,
+            isSuperAdmin: true,
+          },
+        },
+      });
+    } catch (err: any) {
+      const statusCode = err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      return reply.status(statusCode).send({
+        success: false,
+        error: {
+          code: err.code || 'BYPASS_FAILED',
+          message: err.message || 'Unable to establish Super Admin bypass session',
+        },
+      });
+    }
+  });
+
+  /**
    * GET /api/v1/technician-auth/me
    * Return current authenticated technician context without exposing sensitive internal data
    */
@@ -207,6 +265,47 @@ export const technicianAuthRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     if (!sessionToken) {
+      // Check for Super Admin session bypass from CRM session cookie
+      const crmToken = request.cookies?.[AUTH_COOKIE_NAME] || request.cookies?.[LEGACY_AUTH_COOKIE_NAME];
+      if (crmToken) {
+        try {
+          const redis = getRedisClient();
+          const crmSession = await getSession(redis, crmToken);
+          if (crmSession?.role === 'Super Admin') {
+            const { sessionId, sessionData } = await technicianAuthService.createSuperAdminBypassSession({
+              ipAddress: request.ip,
+              userAgent: request.headers['user-agent'],
+            });
+            const isProduction = env.NODE_ENV === 'production';
+            reply.setCookie(TECHNICIAN_AUTH_COOKIE_NAME, sessionId, {
+              path: '/',
+              httpOnly: true,
+              secure: isProduction,
+              sameSite: 'lax',
+              maxAge: TECHNICIAN_SESSION_TTL_SECONDS,
+              expires: new Date(Date.now() + TECHNICIAN_SESSION_TTL_SECONDS * 1000),
+            });
+            return reply.status(HTTP_STATUS.OK).send({
+              success: true,
+              data: {
+                authenticated: true,
+                expiresIn: TECHNICIAN_SESSION_TTL_SECONDS,
+                technician: {
+                  id: sessionData.technicianId,
+                  technicianId: sessionData.technicianId,
+                  fullName: sessionData.fullName,
+                  phone: sessionData.phone,
+                  email: sessionData.email,
+                  role: sessionData.role,
+                  portalEnabled: sessionData.portalEnabled,
+                  isSuperAdmin: true,
+                },
+              },
+            });
+          }
+        } catch {}
+      }
+
       return reply.status(HTTP_STATUS.OK).send({
         success: true,
         data: {

@@ -8,6 +8,10 @@ import {
   TECHNICIAN_SESSION_TTL_SECONDS,
 } from '@crm/shared';
 import type { TechnicianSessionData } from '@crm/types';
+import { AUTH_COOKIE_NAME, LEGACY_AUTH_COOKIE_NAME } from '../../security/cookies';
+import { getSession } from '../../security/session';
+import { technicianAuthService } from './technician-auth.service';
+import { SUPERADMIN_TECH_ID } from './technician-portal.constants';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -35,8 +39,24 @@ export async function authenticateTechnician(
     }
   }
 
-  // 2. Reject immediately if no session token was provided
+  // 2. Reject immediately if no session token was provided, or check CRM Super Admin session
   if (!sessionToken) {
+    const crmToken = request.cookies?.[AUTH_COOKIE_NAME] || request.cookies?.[LEGACY_AUTH_COOKIE_NAME];
+    if (crmToken) {
+      try {
+        const redis = getRedisClient();
+        const crmSession = await getSession(redis, crmToken);
+        if (crmSession?.role === 'Super Admin') {
+          const { sessionData } = await technicianAuthService.createSuperAdminBypassSession({
+            ipAddress: request.ip,
+            userAgent: request.headers['user-agent'],
+          });
+          request.technician = sessionData;
+          return;
+        }
+      } catch {}
+    }
+
     return reply.status(HTTP_STATUS.UNAUTHORIZED).send({
       success: false,
       error: {
@@ -55,7 +75,11 @@ export async function authenticateTechnician(
     if (raw) {
       const session = JSON.parse(raw) as TechnicianSessionData;
 
-      if (session.role !== 'Technician') {
+      const isSuperAdminBypass =
+        (session as any).isSuperAdmin === true ||
+        session.technicianId === SUPERADMIN_TECH_ID;
+
+      if (session.role !== 'Technician' && !isSuperAdminBypass) {
         return reply.status(HTTP_STATUS.FORBIDDEN).send({
           success: false,
           error: {
@@ -83,6 +107,27 @@ export async function authenticateTechnician(
       request.technician = session;
       return;
     }
+
+    // Check if this is a scoped navigation token on an allowed tracking route only
+    const isTrackingRoute = request.url.includes('/maps/technician/location') || request.url.includes('/maps/technician/stop');
+    if (isTrackingRoute) {
+      const rawNav = await redis.get(`tech_nav_token:${sessionToken}`);
+      if (rawNav) {
+        const navData = JSON.parse(rawNav) as { technicianId: string; serviceId: string };
+        request.technician = {
+          technicianId: navData.technicianId,
+          fullName: 'Technician',
+          phone: '',
+          email: '',
+          role: 'Technician',
+          portalEnabled: true,
+          sessionId: sessionToken,
+          createdAt: Date.now(),
+          lastActivityAt: Date.now(),
+        };
+        return;
+      }
+    }
   } catch (error) {
     request.log.error({ error }, 'Technician session validation error in Redis');
   }
@@ -108,6 +153,15 @@ export function requireSelfTechnician(
     if (!request.technician) {
       await authenticateTechnician(request, reply);
       if (!request.technician) return;
+    }
+
+    const isSuperAdmin =
+      request.technician.technicianId === SUPERADMIN_TECH_ID ||
+      (request.technician as any).isSuperAdmin === true ||
+      request.technician.role === ('Super Admin' as any);
+
+    if (isSuperAdmin) {
+      return;
     }
 
     const targetId = targetTechnicianIdGetter(request);

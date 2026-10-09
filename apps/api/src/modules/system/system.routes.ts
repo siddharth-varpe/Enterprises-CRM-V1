@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import fs from 'fs';
 import path from 'path';
 import { authenticate } from '../../middleware/auth';
-import { requirePermission } from '../../middleware/rbac';
+import { requirePermission, requireRole } from '../../middleware/rbac';
 import { db } from '../../database/client';
 import { sql } from 'drizzle-orm';
 import { memorySales } from '../sales/sales.repository';
@@ -76,7 +76,7 @@ export const systemRoutes: FastifyPluginAsync = async (fastify) => {
    */
   fastify.post(
     '/purge-seeded-data',
-    { preHandler: [authenticate, requirePermission('settings.manage')] },
+    { preHandler: [authenticate, requireRole('Super Admin')] },
     async (_request, reply) => {
       const tablesToClean = [
         'job_cards',
@@ -182,7 +182,7 @@ export const systemRoutes: FastifyPluginAsync = async (fastify) => {
    */
   fastify.post(
     '/delete-crm-database',
-    { preHandler: [authenticate, requirePermission('settings.manage')] },
+    { preHandler: [authenticate, requireRole('Super Admin')] },
     async (_request, reply) => {
       const allBusinessTables = [
         'job_cards',

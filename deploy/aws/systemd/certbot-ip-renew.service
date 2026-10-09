@@ -1,0 +1,10 @@
+[Unit]
+Description=Certbot IP Certificate Automated Renewal (Let's Encrypt Shortlived Profile)
+Documentation=https://eff-certbot.readthedocs.io/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/certbot renew --preferred-profile shortlived --quiet --post-hook "systemctl reload nginx"
+PrivateTmp=true

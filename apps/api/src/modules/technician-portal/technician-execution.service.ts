@@ -10,6 +10,7 @@ import type {
   TechnicianJobHoldInput,
   TechnicianJobCompleteInput,
 } from '@crm/validation';
+import { SUPERADMIN_TECH_ID } from './technician-portal.constants';
 
 export class TechnicianExecutionService {
   /**
@@ -35,6 +36,8 @@ export class TechnicianExecutionService {
       throw error;
     }
 
+    const isSuperAdmin = technicianId === SUPERADMIN_TECH_ID;
+
     try {
       // 1. Check if id directly matches a job card
       try {
@@ -46,7 +49,7 @@ export class TechnicianExecutionService {
           .limit(1);
 
         if (directJc) {
-          if (!directJc.technicianId || directJc.technicianId !== technicianId) {
+          if (!isSuperAdmin && (!directJc.technicianId || directJc.technicianId !== technicianId)) {
             const error: any = new Error(
               'Access denied: This job card is not assigned to your technician account.'
             );
@@ -70,7 +73,7 @@ export class TechnicianExecutionService {
           .limit(1);
 
         if (serviceRow) {
-          if (!serviceRow.technicianId || serviceRow.technicianId !== technicianId) {
+          if (!isSuperAdmin && (!serviceRow.technicianId || serviceRow.technicianId !== technicianId)) {
             const error: any = new Error(
               'Access denied: This service is not assigned to your technician account.'
             );
@@ -87,7 +90,7 @@ export class TechnicianExecutionService {
             .limit(1);
 
           if (linkedJc) {
-            if (!linkedJc.technicianId || linkedJc.technicianId !== technicianId) {
+            if (!isSuperAdmin && (!linkedJc.technicianId || linkedJc.technicianId !== technicianId)) {
               const error: any = new Error(
                 'Access denied: This job card is not assigned to your technician account.'
               );
@@ -117,7 +120,7 @@ export class TechnicianExecutionService {
         (j) => j.id === id || j.jobCardNumber === id || j.serviceId === id
       );
       if (memJc) {
-        if (!memJc.technicianId || memJc.technicianId !== technicianId) {
+        if (!isSuperAdmin && (!memJc.technicianId || memJc.technicianId !== technicianId)) {
           const error: any = new Error(
             'Access denied: This job card is not assigned to your technician account.'
           );

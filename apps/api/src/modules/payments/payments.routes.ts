@@ -126,7 +126,7 @@ export const paymentsRoutes: FastifyPluginAsync = async (fastify) => {
    * POST /api/v1/payments/:id/cancel
    * Cancel payment and recalculate invoice balance atomically
    */
-  fastify.post('/:id/cancel', { preHandler: [requirePermission('payments.create')] }, async (request, reply) => {
+  fastify.post('/:id/cancel', { preHandler: [requirePermission('payments.refund')] }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = CancelPaymentSchema.parse(request.body);
     const actorId = request.user?.userId;
@@ -144,7 +144,7 @@ export const paymentsRoutes: FastifyPluginAsync = async (fastify) => {
    * POST /api/v1/payments/:id/reverse
    * Reverse payment (alias for cancel) with permission check
    */
-  fastify.post('/:id/reverse', { preHandler: [requirePermission('payments.create')] }, async (request, reply) => {
+  fastify.post('/:id/reverse', { preHandler: [requirePermission('payments.refund')] }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = CancelPaymentSchema.parse(request.body);
     const actorId = request.user?.userId;
@@ -162,7 +162,7 @@ export const paymentsRoutes: FastifyPluginAsync = async (fastify) => {
    * POST /api/v1/payments/:id/refund
    * Record payment refund
    */
-  fastify.post('/:id/refund', { preHandler: [requirePermission('payments.create')] }, async (request, reply) => {
+  fastify.post('/:id/refund', { preHandler: [requirePermission('payments.refund')] }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = RefundPaymentSchema.parse(request.body);
     const actorId = request.user?.userId;

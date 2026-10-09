@@ -20,6 +20,7 @@ import { memoryInvoices } from '../invoices/invoices.repository';
 import { memoryPayments } from '../payments/payments.repository';
 import { technicianPortalRepository } from '../technician-portal/technician-portal.repository';
 import { technicianAuthService } from '../technician-portal/technician-auth.service';
+import { mapsTrackingRedisService } from '../maps/maps-tracking.redis';
 import type {
   TechnicianQueryFilter,
   CreateTechnicianInput,
@@ -1136,12 +1137,17 @@ export class TechniciansRepository {
       console.warn('[TechniciansRepository.setPortalAccess] DB update notice, using memory fallback:', err?.message);
     }
 
-    // When portal access is disabled, immediately revoke all active sessions and OTP challenges for this technician
+    // When portal access is disabled, immediately revoke all active sessions, OTP challenges, and clear live GPS tracking
     if (!portalEnabled) {
       try {
         await technicianAuthService.revokeAllSessionsForTechnician(id);
       } catch (err) {
         console.warn('[TechniciansRepository.setPortalAccess] Failed to revoke active sessions:', err);
+      }
+      try {
+        await mapsTrackingRedisService.clearTracking(id);
+      } catch (err) {
+        console.warn('[TechniciansRepository.setPortalAccess] Failed to clear tracking:', err);
       }
     }
 

@@ -6,6 +6,8 @@ import {
   TECHNICIAN_AUTH_COOKIE_NAME,
   TECH_REDIS_KEYS,
 } from '@crm/shared';
+import { getSession } from '../../security/session';
+import { AUTH_COOKIE_NAME, LEGACY_AUTH_COOKIE_NAME } from '../../security/cookies';
 import type { TechnicianSessionData } from '@crm/types';
 import { mapsTrackingRedisService } from './maps-tracking.redis';
 import type { TechnicianLocationPing, TechnicianTrackingRecord } from './maps-tracking.types';
@@ -51,9 +53,7 @@ export function initMapsSocketServer(server: HttpServer): SocketIOServer {
         const cleanOrigin = origin.replace(/\/+$/, '');
         if (
           env.NODE_ENV !== 'production' ||
-          allowedOrigins.includes(cleanOrigin) ||
-          cleanOrigin.endsWith('.onrender.com') ||
-          cleanOrigin.endsWith('.vercel.app')
+          allowedOrigins.includes(cleanOrigin)
         ) {
           return callback(null, true);
         }
@@ -95,10 +95,32 @@ export function initMapsSocketServer(server: HttpServer): SocketIOServer {
         }
       }
 
-      // Check Admin / Staff authentication token
-      const adminToken = auth.adminToken || auth.token;
-      if (adminToken || socket.handshake.query?.role === 'admin') {
-        // Admin authorization
+      // Check Admin / Staff authentication token against active Redis sessions
+      let adminToken: string | undefined = auth.adminToken || auth.token;
+      if (!adminToken && cookieHeader) {
+        const match = cookieHeader.match(new RegExp(`(?:^|; )(?:${AUTH_COOKIE_NAME}|${LEGACY_AUTH_COOKIE_NAME})=([^;]*)`));
+        if (match && match[1]) {
+          adminToken = decodeURIComponent(match[1]);
+        }
+      }
+      if (!adminToken && headers.authorization) {
+        const parts = (headers.authorization as string).split(' ');
+        if (parts.length === 2 && parts[0]?.toLowerCase() === 'bearer') {
+          adminToken = parts[1];
+        }
+      }
+
+      if (adminToken) {
+        const redis = getRedisClient();
+        const session = await getSession(redis, adminToken);
+        if (session && (session.role === 'Super Admin' || session.role === 'Admin' || session.role === 'Staff')) {
+          socket.data.user = session;
+          socket.data.role = 'ADMIN';
+          return next();
+        }
+      }
+
+      if (env.NODE_ENV === 'test' && socket.handshake.query?.role === 'admin') {
         socket.data.role = 'ADMIN';
         return next();
       }
@@ -122,18 +144,34 @@ export function initMapsSocketServer(server: HttpServer): SocketIOServer {
       // Listen for continuous GPS position updates from technician device
       socket.on('technician:location_ping', async (data: any, ack?: (res: any) => void) => {
         try {
-          if (!data || typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
+          if (
+            !data ||
+            typeof data.latitude !== 'number' ||
+            typeof data.longitude !== 'number' ||
+            Number.isNaN(data.latitude) ||
+            Number.isNaN(data.longitude) ||
+            data.latitude < -90 ||
+            data.latitude > 90 ||
+            data.longitude < -180 ||
+            data.longitude > 180
+          ) {
             if (ack) ack({ success: false, error: 'Invalid coordinates' });
+            return;
+          }
+
+          const rawTs = Number(data.timestamp) || Date.now();
+          if (Math.abs(Date.now() - rawTs) > 86400000) {
+            if (ack) ack({ success: false, error: 'Location ping timestamp drift exceeds allowable window' });
             return;
           }
 
           const ping: TechnicianLocationPing = {
             latitude: data.latitude,
             longitude: data.longitude,
-            accuracy: Number(data.accuracy) || 10,
+            accuracy: Math.max(0, Math.min(1000, Number(data.accuracy) || 10)),
             heading: data.heading ?? null,
             speed: data.speed ?? null,
-            timestamp: Number(data.timestamp) || Date.now(),
+            timestamp: rawTs,
           };
 
           // Strictly use authenticated server-derived technician ID
@@ -176,7 +214,8 @@ export function initMapsSocketServer(server: HttpServer): SocketIOServer {
     }
 
     // Admin connection: Join live map room and send initial active state snapshot
-    if (role === 'ADMIN' || socket.handshake.query?.subscribe === 'admin-map') {
+    // Strictly verify role === 'ADMIN'; unauthenticated guests and technicians MUST NOT join admin:live-map
+    if (role === 'ADMIN') {
       socket.join('admin:live-map');
 
       // Send initial snapshot of all actively tracked technicians

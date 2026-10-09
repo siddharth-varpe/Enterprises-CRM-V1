@@ -10,8 +10,9 @@ export interface AuthenticatedTechnician {
   fullName: string;
   phone: string;
   email?: string | null;
-  role: 'Technician';
+  role: 'Technician' | 'Super Admin';
   portalEnabled: boolean;
+  isSuperAdmin?: boolean;
 }
 
 interface TechnicianAuthContextValue {

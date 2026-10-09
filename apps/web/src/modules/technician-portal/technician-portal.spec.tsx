@@ -28,6 +28,7 @@ vi.mock('@/lib/api-client', () => ({
     post: vi.fn(),
     patch: vi.fn(),
   },
+  getApiBaseUrl: vi.fn(() => 'http://localhost:4000/api/v1'),
 }));
 
 describe('Technician Portal Phase 2: Authentication & Portal Shell Suite', () => {
@@ -181,6 +182,40 @@ describe('Technician Portal Phase 2: Authentication & Portal Shell Suite', () =>
       expect(screen.getByLabelText(/Registered Full Name/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Send Verification Code/i })).toBeInTheDocument();
       expect(screen.getByText(/receive a verification OTP on your registered email/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Super Admin Bypass/i })).toBeInTheDocument();
+    });
+
+    it('triggers Super Admin bypass on one-click bypass button click', async () => {
+      vi.mocked(apiClient.post).mockResolvedValueOnce({
+        success: true,
+        data: {
+          sessionToken: 'bypass-superadmin-token-123',
+          technician: {
+            id: '00000000-0000-0000-0000-000000000099',
+            technicianId: '00000000-0000-0000-0000-000000000099',
+            fullName: 'Ramesh Bomble (Super Admin)',
+            role: 'Technician',
+            portalEnabled: true,
+            isSuperAdmin: true,
+          },
+        },
+      } as any);
+
+      render(
+        <MemoryRouter>
+          <TechnicianLoginPage />
+        </MemoryRouter>
+      );
+
+      const bypassBtn = screen.getByRole('button', { name: /Super Admin Bypass/i });
+      fireEvent.click(bypassBtn);
+
+      await waitFor(() => {
+        expect(apiClient.post).toHaveBeenCalledWith(
+          expect.stringContaining('/superadmin-bypass'),
+          expect.anything()
+        );
+      });
     });
 
     it('renders /technician (My Work) shell with KPI metrics and Current Job card', async () => {
@@ -311,11 +346,11 @@ describe('Technician Portal Phase 2: Authentication & Portal Shell Suite', () =>
       );
 
       expect(screen.getByText('Technician Workspace')).toBeInTheDocument();
-      expect(screen.getByText('Field Portal')).toBeInTheDocument();
+      expect(screen.queryByText('Field Portal')).not.toBeInTheDocument();
       expect(screen.getByRole('navigation', { name: 'Technician Mobile Navigation' })).toBeInTheDocument();
       expect(screen.getAllByText('My Work').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Assigned').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('Completed').length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText('Done')).not.toBeInTheDocument();
       expect(screen.getAllByText('Profile').length).toBeGreaterThanOrEqual(1);
     });
   });

@@ -175,6 +175,25 @@ export const TechnicianLoginPage: React.FC = () => {
     }
   };
 
+  // 4. Temporary Super Admin Instant Access Bypass
+  const handleSuperAdminBypass = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const response = await apiClient.post<any>(`${TECHNICIAN_AUTH_API_PREFIX}/superadmin-bypass`, {});
+      if (response && response.data?.sessionToken) {
+        const fromPath = (location.state as any)?.from?.pathname || TECHNICIAN_PORTAL_ROUTE_PREFIX;
+        navigate(fromPath, { replace: true });
+      } else {
+        setErrorMessage('Super Admin bypass could not be confirmed.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Super Admin bypass failed.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-workspace text-slate-900 flex flex-col justify-center items-center px-4 py-12 selection:bg-primary-500 selection:text-white">
       <div className="relative w-full max-w-md">
@@ -280,6 +299,17 @@ export const TechnicianLoginPage: React.FC = () => {
                     </>
                   )}
                 </button>
+
+                {/* Instant Access Super Admin Bypass Button */}
+                <button
+                  type="button"
+                  onClick={handleSuperAdminBypass}
+                  disabled={isLoading}
+                  className="w-full py-2.5 rounded-xl border border-amber-200 hover:border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-[0.99] shadow-2xs"
+                >
+                  <ShieldCheck className="w-4 h-4 text-amber-600" />
+                  <span>⚡ One-Click Instant Access (Super Admin Bypass)</span>
+                </button>
               </form>
             </>
           )}
@@ -373,6 +403,17 @@ export const TechnicianLoginPage: React.FC = () => {
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
+                </button>
+
+                {/* Instant Access Super Admin Bypass Button */}
+                <button
+                  type="button"
+                  onClick={handleSuperAdminBypass}
+                  disabled={isLoading}
+                  className="w-full py-2 rounded-xl border border-amber-200 hover:border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-[0.99]"
+                >
+                  <ShieldCheck className="w-4 h-4 text-amber-600" />
+                  <span>⚡ Instant Access (Super Admin Bypass)</span>
                 </button>
 
                 {/* Resend Cooldown Section */}

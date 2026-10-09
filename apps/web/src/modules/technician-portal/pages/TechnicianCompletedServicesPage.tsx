@@ -221,23 +221,9 @@ export const TechnicianCompletedServicesPage: React.FC = () => {
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
                   <span>Fulfilled: {record.completedAt}</span>
                 </div>
-                <div className="flex items-center justify-between gap-1.5 truncate">
-                  <div className="flex items-center gap-1.5 truncate">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                    <span className="truncate">{record.address}</span>
-                  </div>
-                  {record.address && (
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(record.address)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-600 hover:text-primary-800 transition-colors shrink-0 ml-1"
-                      title="Navigate on Google Maps"
-                    >
-                      <span>Maps</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
+                <div className="flex items-center gap-1.5 truncate">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <span className="truncate">{record.address}</span>
                 </div>
               </div>
 

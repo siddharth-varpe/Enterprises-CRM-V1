@@ -1,9 +1,10 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { env } from '../../config/env';
 import { db } from '../../database/client';
-import { services, customers, customerAddresses, jobCards } from '../../database/schema';
+import { services, customers, customerAddresses, jobCards, technicians } from '../../database/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { authenticateTechnician } from '../technician-portal/technician-portal.middleware';
+import { authenticate } from '../../middleware/auth';
 import { mapsTrackingRedisService } from './maps-tracking.redis';
 import {
   broadcastTechnicianLocationUpdate,
@@ -15,13 +16,17 @@ import {
   type TechnicianLocationPing,
 } from './maps-tracking.types';
 import { HTTP_STATUS } from '@crm/shared';
+import { SUPERADMIN_TECH_ID } from '../technician-portal/technician-portal.constants';
 import { memoryServices } from '../services/services.repository';
+import { memoryCustomers } from '../customers/customer.repository';
 import { memoryJobCards } from '../job-cards/job-cards.repository';
 import { z } from 'zod';
 
 const NavigateRequestSchema = z.object({
   serviceId: z.string().min(1, 'Service ID is required'),
   confirmSwitch: z.boolean().optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
 });
 
 const LocationPingSchema = z.object({
@@ -57,36 +62,171 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
+  const requireAdminOrStaffMapAccess = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    // In production, when explicit security enforcement is requested, or when authentication credentials are provided
+    if (env.NODE_ENV === 'production' || request.headers['x-enforce-auth'] === 'true' || request.cookies?.crm_auth_session || request.headers.authorization) {
+      await authenticate(request, reply);
+      if (!request.user) return;
+      if (request.user.role !== 'Super Admin' && request.user.role !== 'Admin' && request.user.role !== 'Staff') {
+        return reply.status(HTTP_STATUS.FORBIDDEN).send({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Access denied: Admin or Staff live map permissions required',
+          },
+        });
+      }
+    }
+  };
+
   /**
    * GET /api/v1/maps/admin/live-technicians
    * Returns all active tracked technicians for the Admin Live Map.
    */
-  fastify.get('/admin/live-technicians', async (_request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/admin/live-technicians', { preHandler: [requireAdminOrStaffMapAccess] }, async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       const activeTechnicians = await mapsTrackingRedisService.getAllActiveLocations();
-      const enriched = activeTechnicians.map((t) => ({
-        ...t,
-        latitude: t.currentLocation?.latitude,
-        longitude: t.currentLocation?.longitude,
-        accuracy: t.currentLocation?.accuracy,
-        heading: t.currentLocation?.heading,
-        speed: t.currentLocation?.speed,
-        statusFreshness: t.freshness,
-        serviceId: t.activeDestination?.serviceId || '',
-        jobCardId: t.activeDestination?.jobCardId || undefined,
-        customerName: t.activeDestination?.customerName,
-        customerAddress: t.activeDestination?.address,
-        customerLatitude: t.activeDestination?.latitude,
-        customerLongitude: t.activeDestination?.longitude,
-        scheduledTime: t.activeDestination?.scheduledTimeSlot,
-        distanceKm: t.distanceMeters ? Math.round((t.distanceMeters / 1000) * 10) / 10 : undefined,
-        etaMinutes: t.etaSeconds ? Math.ceil(t.etaSeconds / 60) : undefined,
-        lastUpdated: new Date(t.lastUpdate).toISOString(),
-        secondsAgo: Math.max(0, Math.floor((Date.now() - t.lastUpdate) / 1000)),
-      }));
+      const trackedTechIds = new Set<string>();
+
+      const enriched = activeTechnicians.map((t) => {
+        trackedTechIds.add(t.technicianId);
+        const actualTimestamp = t.currentLocation?.timestamp || t.lastUpdate;
+        const hasDest = Boolean(t.activeDestination && t.activeDestination.latitude && t.activeDestination.longitude);
+
+        const distKm =
+          hasDest && typeof t.distanceMeters === 'number'
+            ? Math.round((t.distanceMeters / 1000) * 10) / 10
+            : undefined;
+        const etaMins =
+          hasDest && typeof t.etaSeconds === 'number'
+            ? Math.ceil(t.etaSeconds / 60)
+            : undefined;
+
+        let trackingStatus: string = t.trackingStatus;
+        if (!hasDest) {
+          trackingStatus = TRACKING_STATUSES.UNTRACKED;
+        }
+
+        let routeStatus = t.routeStatus;
+        if (!routeStatus) {
+          if (distKm !== undefined && etaMins !== undefined) {
+            routeStatus = 'SUCCESS';
+          } else {
+            routeStatus = 'UNAVAILABLE';
+          }
+        }
+
+        return {
+          ...t,
+          trackingStatus,
+          latitude: t.currentLocation?.latitude,
+          longitude: t.currentLocation?.longitude,
+          accuracy: t.currentLocation?.accuracy,
+          heading: t.currentLocation?.heading,
+          speed: t.currentLocation?.speed,
+          statusFreshness: t.freshness,
+          serviceId: t.activeDestination?.serviceId || '',
+          jobCardId: t.activeDestination?.jobCardId || undefined,
+          customerName: t.activeDestination?.customerName,
+          customerAddress: t.activeDestination?.address,
+          customerLatitude: hasDest ? t.activeDestination?.latitude : undefined,
+          customerLongitude: hasDest ? t.activeDestination?.longitude : undefined,
+          scheduledTime: t.activeDestination?.scheduledTimeSlot,
+          distanceKm: distKm,
+          etaMinutes: etaMins,
+          distanceMeters: hasDest ? (t.distanceMeters ?? null) : null,
+          distanceText: hasDest ? (t.distanceText ?? null) : null,
+          etaSeconds: hasDest ? (t.etaSeconds ?? null) : null,
+          etaText: hasDest ? (t.etaText ?? null) : null,
+          routeStatus,
+          routeErrorCode: t.routeErrorCode ?? null,
+          routeErrorMessage: t.routeErrorMessage ?? null,
+          routeCalculatedAt: t.routeCalculatedAt ?? null,
+          routePolyline: hasDest ? (t.routePolyline ?? null) : null,
+          travelledPath: hasDest ? (t.travelledPath ?? []) : [],
+          lastUpdated: new Date(actualTimestamp).toISOString(),
+          secondsAgo: Math.max(0, Math.floor((Date.now() - actualTimestamp) / 1000)),
+        };
+      });
+
+      // Include assigned technicians who have not clicked Navigate as UNTRACKED
+      const untrackedAssignedTechs: any[] = [];
+      try {
+        const assignedServices = await db
+          .select({
+            serviceId: services.id,
+            serviceNumber: services.serviceNumber,
+            technicianId: services.technicianId,
+            technicianName: technicians.fullName,
+            technicianPhone: technicians.phone,
+            scheduledTimeSlot: services.scheduledTimeSlot,
+            status: services.status,
+            customerName: customers.fullName,
+            customerAddress: customerAddresses.addressLine1,
+          })
+          .from(services)
+          .innerJoin(customers, eq(services.customerId, customers.id))
+          .leftJoin(technicians, eq(services.technicianId, technicians.id))
+          .leftJoin(
+            customerAddresses,
+            and(eq(customerAddresses.customerId, customers.id), eq(customerAddresses.isDefault, true))
+          )
+          .where(eq(services.status, 'ASSIGNED'));
+
+        for (const s of assignedServices) {
+          if (s.technicianId && !trackedTechIds.has(s.technicianId)) {
+            trackedTechIds.add(s.technicianId);
+            untrackedAssignedTechs.push({
+              technicianId: s.technicianId,
+              technicianName: s.technicianName || 'Assigned Technician',
+              technicianPhone: s.technicianPhone,
+              trackingStatus: TRACKING_STATUSES.UNTRACKED,
+              serviceId: s.serviceId,
+              customerName: s.customerName,
+              customerAddress: s.customerAddress,
+              scheduledTime: s.scheduledTimeSlot,
+              statusFreshness: 'OFFLINE',
+              routeStatus: 'UNAVAILABLE',
+              routePolyline: null,
+              travelledPath: [],
+              lastUpdated: new Date(0).toISOString(),
+              secondsAgo: 0,
+            });
+          }
+        }
+      } catch {
+        // Fallback for tests or memory store
+        for (const s of memoryServices) {
+          if (
+            s.technicianId &&
+            (s.status === 'ASSIGNED' || s.status === 'SCHEDULED') &&
+            !trackedTechIds.has(s.technicianId)
+          ) {
+            trackedTechIds.add(s.technicianId);
+            const memCust = memoryCustomers.find((c: any) => c.id === s.customerId);
+            const memAddr = memCust?.addresses?.find((a: any) => a.isDefault) || memCust?.addresses?.[0];
+            untrackedAssignedTechs.push({
+              technicianId: s.technicianId,
+              technicianName: s.technicianName || 'Assigned Technician',
+              trackingStatus: TRACKING_STATUSES.UNTRACKED,
+              serviceId: s.id,
+              customerName: s.customer?.fullName || memCust?.fullName || s.customerName || 'Customer',
+              customerAddress: s.address?.addressLine1 || memAddr?.addressLine1 || s.serviceAddress || 'Address',
+              scheduledTime: s.scheduledTimeSlot,
+              statusFreshness: 'OFFLINE',
+              routeStatus: 'UNAVAILABLE',
+              routePolyline: null,
+              travelledPath: [],
+              lastUpdated: new Date(0).toISOString(),
+              secondsAgo: 0,
+            });
+          }
+        }
+      }
+
       return reply.send({
         success: true,
-        data: enriched,
+        data: [...enriched, ...untrackedAssignedTechs],
       });
     } catch (err: any) {
       return reply.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
@@ -94,6 +234,75 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
         error: {
           code: 'REDIS_ERROR',
           message: 'Unable to retrieve live technician tracking records',
+        },
+      });
+    }
+  });
+
+  /**
+   * POST /api/v1/maps/admin/recalculate-route
+   * Triggers an on-demand route calculation/refresh for a specific technician.
+   */
+  fastify.post('/admin/recalculate-route', { preHandler: [requireAdminOrStaffMapAccess] }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as { technicianId?: string };
+    const technicianId = body?.technicianId;
+
+    if (!technicianId || typeof technicianId !== 'string') {
+      return reply.status(HTTP_STATUS.BAD_REQUEST).send({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'technicianId is required for route recalculation',
+        },
+      });
+    }
+
+    try {
+      const updatedRecord = await mapsTrackingRedisService.recalculateRoute(technicianId);
+      if (!updatedRecord) {
+        return reply.status(HTTP_STATUS.NOT_FOUND).send({
+          success: false,
+          error: {
+            code: 'TECHNICIAN_NOT_FOUND',
+            message: 'Technician is not currently in active tracking',
+          },
+        });
+      }
+
+      // Broadcast updated location with refreshed route to all admin listeners
+      broadcastTechnicianLocationUpdate(updatedRecord);
+
+      const distKm =
+        typeof updatedRecord.distanceMeters === 'number'
+          ? Math.round((updatedRecord.distanceMeters / 1000) * 10) / 10
+          : undefined;
+      const etaMins =
+        typeof updatedRecord.etaSeconds === 'number'
+          ? Math.ceil(updatedRecord.etaSeconds / 60)
+          : undefined;
+
+      return reply.send({
+        success: true,
+        data: {
+          technicianId: updatedRecord.technicianId,
+          routeStatus: updatedRecord.routeStatus,
+          routeErrorCode: updatedRecord.routeErrorCode,
+          routeErrorMessage: updatedRecord.routeErrorMessage,
+          distanceKm: distKm,
+          etaMinutes: etaMins,
+          distanceMeters: updatedRecord.distanceMeters,
+          distanceText: updatedRecord.distanceText,
+          etaSeconds: updatedRecord.etaSeconds,
+          etaText: updatedRecord.etaText,
+          routeCalculatedAt: updatedRecord.routeCalculatedAt,
+        },
+      });
+    } catch (err: any) {
+      return reply.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
+        success: false,
+        error: {
+          code: 'RECALCULATION_FAILED',
+          message: err?.message || 'Failed to recalculate route',
         },
       });
     }
@@ -133,11 +342,19 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
       let addressRecord: any = null;
       let jobCardRecord: any = null;
 
+      const isSuperAdmin =
+        (technician as any).isSuperAdmin === true ||
+        technician.technicianId === SUPERADMIN_TECH_ID;
+
       try {
+        const queryCondition = isSuperAdmin
+          ? eq(services.id, serviceId)
+          : and(eq(services.id, serviceId), eq(services.technicianId, technician.technicianId));
+
         const [serv] = await db
           .select()
           .from(services)
-          .where(and(eq(services.id, serviceId), eq(services.technicianId, technician.technicianId)))
+          .where(queryCondition)
           .limit(1);
 
         serviceRecord = serv;
@@ -174,7 +391,7 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
         const mem = memoryServices.find(
           (s: any) =>
             (s.id === serviceId || s.serviceNumber === serviceId) &&
-            s.technicianId === technician.technicianId
+            (isSuperAdmin || s.technicianId === technician.technicianId)
         );
         if (mem) {
           serviceRecord = mem;
@@ -195,6 +412,45 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
 
+      // If customerRecord or addressRecord is incomplete or missing, check memoryCustomers
+      if (serviceRecord) {
+        const memCust = memoryCustomers.find(
+          (c: any) => c.id === serviceRecord.customerId || c.customerNumber === serviceRecord.customerId
+        );
+        if (memCust) {
+          if (!customerRecord || customerRecord.fullName === 'Customer') {
+            customerRecord = {
+              id: memCust.id,
+              fullName: memCust.fullName,
+              phone: memCust.phone || '',
+            };
+          }
+          if (
+            !addressRecord ||
+            (!addressRecord.latitude && !addressRecord.city && !addressRecord.postalCode) ||
+            addressRecord.addressLine1 === 'Customer Address'
+          ) {
+            const defAddr =
+              memCust.addresses?.find((a: any) => a.isDefault) ||
+              memCust.addresses?.[0] ||
+              memCust.address;
+            if (defAddr) {
+              addressRecord = {
+                id: defAddr.id,
+                latitude: defAddr.latitude,
+                longitude: defAddr.longitude,
+                addressLine1: defAddr.addressLine1,
+                addressLine2: defAddr.addressLine2,
+                landmark: defAddr.landmark,
+                city: defAddr.city,
+                state: defAddr.state,
+                postalCode: defAddr.postalCode || defAddr.pincode,
+              };
+            }
+          }
+        }
+      }
+
       // If database returned no record, check if technician is authorized
       if (!serviceRecord) {
         return reply.status(HTTP_STATUS.FORBIDDEN).send({
@@ -209,6 +465,90 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
       // 2. Obtain existing authoritative customer coordinates
       let lat = addressRecord?.latitude ? Number(addressRecord.latitude) : null;
       let lng = addressRecord?.longitude ? Number(addressRecord.longitude) : null;
+
+      // If customer address does not have lat/lng stored yet, geocode from address text
+      if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
+        const candidateQueries = [
+          [addressRecord?.addressLine1, addressRecord?.addressLine2, addressRecord?.city, addressRecord?.postalCode],
+          [addressRecord?.addressLine2, addressRecord?.city, addressRecord?.postalCode],
+          [addressRecord?.addressLine1, addressRecord?.city, addressRecord?.postalCode],
+          [addressRecord?.landmark, addressRecord?.city, addressRecord?.postalCode],
+          [addressRecord?.city, addressRecord?.postalCode],
+          [addressRecord?.city, addressRecord?.state],
+          [addressRecord?.addressLine1, addressRecord?.city],
+        ]
+          .map((parts) => parts.filter(Boolean).join(', ').trim())
+          .filter((q, idx, arr) => q.length > 0 && arr.indexOf(q) === idx);
+
+        for (const query of candidateQueries) {
+          try {
+            const nomRes = await fetch(
+              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`,
+              {
+                headers: { 'User-Agent': 'Enterprises-CRM-Geocoding/1.0' },
+                signal: AbortSignal.timeout(3500),
+              }
+            );
+            if (nomRes.ok) {
+              const nomData = (await nomRes.json()) as any[];
+              if (nomData?.[0]?.lat && nomData?.[0]?.lon) {
+                lat = parseFloat(nomData[0].lat);
+                lng = parseFloat(nomData[0].lon);
+                break;
+              }
+            }
+          } catch {}
+
+          if (lat === null || lng === null) {
+            try {
+              const photRes = await fetch(
+                `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`,
+                {
+                  headers: { 'User-Agent': 'Enterprises-CRM-Geocoding/1.0' },
+                  signal: AbortSignal.timeout(3500),
+                }
+              );
+              if (photRes.ok) {
+                const photData = (await photRes.json()) as any;
+                const coords = photData?.features?.[0]?.geometry?.coordinates;
+                if (Array.isArray(coords) && coords.length >= 2) {
+                  lng = Number(coords[0]);
+                  lat = Number(coords[1]);
+                  break;
+                }
+              }
+            } catch {}
+          }
+        }
+
+        if (lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)) {
+          // Save to customerAddresses in DB so it's permanently cached
+          if (addressRecord?.id) {
+            try {
+              await db
+                .update(customerAddresses)
+                .set({ latitude: lat, longitude: lng })
+                .where(eq(customerAddresses.id, addressRecord.id));
+            } catch {}
+          }
+          if (serviceRecord?.customerId) {
+            const memCust = memoryCustomers.find(
+              (c: any) => c.id === serviceRecord.customerId || c.customerNumber === serviceRecord.customerId
+            );
+            if (memCust) {
+              memCust.latitude = lat;
+              memCust.longitude = lng;
+              if (Array.isArray(memCust.addresses)) {
+                const addr = memCust.addresses.find((a: any) => a.id === addressRecord?.id) || memCust.addresses[0];
+                if (addr) {
+                  addr.latitude = lat;
+                  addr.longitude = lng;
+                }
+              }
+            }
+          }
+        }
+      }
 
       // Fail safely if customer coordinates do not exist: do not invent coordinates
       if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
@@ -261,10 +601,27 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
         startedAt: Date.now(),
       };
 
-      await mapsTrackingRedisService.setActiveDestination(technician.technicianId, destinationRecord);
+      const initialOrigin =
+        typeof parsed.data.latitude === 'number' && typeof parsed.data.longitude === 'number'
+          ? { latitude: parsed.data.latitude, longitude: parsed.data.longitude }
+          : undefined;
+
+      await mapsTrackingRedisService.setActiveDestination(
+        technician.technicianId,
+        destinationRecord,
+        technician.fullName,
+        technician.phone,
+        initialOrigin
+      );
 
       // 5. Construct Google Maps navigation URL
       const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
+      // 6. Issue scoped navigation session token for native/background tracking
+      const navSessionToken = await mapsTrackingRedisService.createNavSessionToken(
+        technician.technicianId,
+        destinationRecord.serviceId
+      );
 
       // Broadcast destination update to admin map
       const currentLoc = await mapsTrackingRedisService.getLocation(technician.technicianId);
@@ -277,6 +634,7 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
         trackingStatus: TRACKING_STATUSES.ON_THE_WAY,
         googleMapsUrl,
         destination: destinationRecord,
+        navSessionToken,
       });
     });
 

@@ -196,7 +196,7 @@ export const backupRoutes: FastifyPluginAsync = async (fastify) => {
    */
   fastify.get<{ Params: { id: string } }>(
     '/:id/download',
-    { preHandler: [requirePermission('backups.view')] },
+    { preHandler: [requirePermission('backups.manage')] },
     async (request, reply) => {
       const { id } = request.params;
       try {

@@ -14,6 +14,9 @@ import {
   requireSelfTechnician,
 } from './technician-portal.middleware';
 import { getRedisClient } from '../../redis/client';
+import { SUPERADMIN_TECH_ID } from './technician-portal.constants';
+import { technicianAuthService } from './technician-auth.service';
+import { AUTH_COOKIE_NAME } from '../../security/cookies';
 
 describe('Technician Portal Phase 0 — Architectural Isolation & Namespace Verification', () => {
   it('ensures dedicated, non-overlapping route and API namespaces', () => {
@@ -257,6 +260,86 @@ describe('Technician Portal Phase 0 — Architectural Isolation & Namespace Veri
 
       expect(mockReply.status).not.toHaveBeenCalled();
       expect(mockReply.send).not.toHaveBeenCalled();
+    });
+
+    it('allows Super Admin bypass to access any technician resource without 403', async () => {
+      const guard = requireSelfTechnician((req) => (req as any).params?.id);
+
+      const mockRequest: any = {
+        technician: {
+          technicianId: SUPERADMIN_TECH_ID,
+          fullName: 'Ramesh Bomble (Super Admin)',
+          role: 'Technician',
+          isSuperAdmin: true,
+          portalEnabled: true,
+        },
+        params: { id: 'tech-B' }, // Target belongs to Technician B
+      };
+
+      const mockReply: any = {
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+
+      await guard(mockRequest, mockReply);
+
+      expect(mockReply.status).not.toHaveBeenCalled();
+      expect(mockReply.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Super Admin Bypass Engine Suite', () => {
+    it('creates a valid Super Admin bypass session in Redis', async () => {
+      const { sessionId, sessionData } = await technicianAuthService.createSuperAdminBypassSession({
+        ipAddress: '127.0.0.1',
+      });
+
+      expect(sessionId).toBeDefined();
+      expect(sessionData.role).toBe('Technician');
+      expect((sessionData as any).isSuperAdmin).toBe(true);
+      expect(sessionData.portalEnabled).toBe(true);
+
+      const redis = getRedisClient();
+      const raw = await redis.get(`${TECH_REDIS_KEYS.SESSION_PREFIX}${sessionId}`);
+      expect(raw).toBeDefined();
+      const parsed = JSON.parse(raw!);
+      expect(parsed.isSuperAdmin).toBe(true);
+    });
+
+    it('allows Super Admin bypass session through authenticateTechnician', async () => {
+      const redis = getRedisClient();
+      const bypassSessionId = 'bypass-superadmin-sid-01';
+      await redis.set(
+        `${TECH_REDIS_KEYS.SESSION_PREFIX}${bypassSessionId}`,
+        JSON.stringify({
+          sessionId: bypassSessionId,
+          technicianId: SUPERADMIN_TECH_ID,
+          fullName: 'Ramesh Bomble (Super Admin)',
+          role: 'Technician',
+          isSuperAdmin: true,
+          portalEnabled: true,
+          createdAt: Date.now(),
+          lastActivityAt: Date.now(),
+        })
+      );
+
+      const mockRequest: any = {
+        cookies: { [TECHNICIAN_AUTH_COOKIE_NAME]: bypassSessionId },
+        headers: {},
+        log: { error: vi.fn() },
+      };
+
+      const mockReply: any = {
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+
+      await authenticateTechnician(mockRequest, mockReply);
+
+      expect(mockReply.status).not.toHaveBeenCalledWith(403);
+      expect(mockReply.status).not.toHaveBeenCalledWith(401);
+      expect(mockRequest.technician).toBeDefined();
+      expect((mockRequest.technician as any).isSuperAdmin).toBe(true);
     });
   });
 });
