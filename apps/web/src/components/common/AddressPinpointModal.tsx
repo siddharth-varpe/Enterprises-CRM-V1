@@ -23,6 +23,7 @@ export interface AddressPinpointModalProps {
   initialLatitude?: number | null;
   initialLongitude?: number | null;
   addressText?: string;
+  addressContext?: string;
   title?: string;
   subtitle?: string;
   onSave: (coords: { latitude: number; longitude: number }) => void | Promise<void>;
@@ -34,10 +35,12 @@ export const AddressPinpointModal: React.FC<AddressPinpointModalProps> = ({
   initialLatitude,
   initialLongitude,
   addressText = '',
+  addressContext = '',
   title = 'Pinpoint Exact Customer Location',
   subtitle = 'Provide precise GPS coordinates so technicians navigate directly to the customer doorstep.',
   onSave,
 }) => {
+  const targetAddress = (addressText || addressContext || '').trim();
   const [lat, setLat] = useState<number>(() => {
     return typeof initialLatitude === 'number' && !isNaN(initialLatitude) ? initialLatitude : 18.5204;
   });
@@ -90,7 +93,7 @@ export const AddressPinpointModal: React.FC<AddressPinpointModalProps> = ({
     setStatusMessage(null);
 
     try {
-      const res = await apiClient.post<{ success: boolean; data: { latitude: number; longitude: number; formattedAddress?: string } }>(
+      const res = await apiClient.post<{ latitude: number; longitude: number; formattedAddress?: string }>(
         '/maps/geocode',
         { query: textToParse }
       );
@@ -172,20 +175,20 @@ export const AddressPinpointModal: React.FC<AddressPinpointModalProps> = ({
     );
   };
 
-  // Geocode from addressText
+  // Geocode from targetAddress
   const handleGeocodeAddress = async () => {
-    if (!addressText.trim()) {
+    if (!targetAddress) {
       setStatusMessage({ type: 'error', text: 'No address text available to geocode.' });
       return;
     }
 
     setIsLoading(true);
-    setStatusMessage({ type: 'info', text: `Searching coordinates for "${addressText}"...` });
+    setStatusMessage({ type: 'info', text: `Searching coordinates for "${targetAddress}"...` });
 
     try {
-      const res = await apiClient.post<{ success: boolean; data: { latitude: number; longitude: number; formattedAddress?: string } }>(
+      const res = await apiClient.post<{ latitude: number; longitude: number; formattedAddress?: string }>(
         '/maps/geocode',
-        { address: addressText }
+        { address: targetAddress }
       );
 
       if (res?.data?.latitude && res?.data?.longitude) {
@@ -235,7 +238,7 @@ export const AddressPinpointModal: React.FC<AddressPinpointModalProps> = ({
     const initMap = async () => {
       try {
         const { setOptions, importLibrary } = await import('@googlemaps/js-api-loader');
-        const configRes = await apiClient.get<{ success: boolean; data: { apiKey: string; mapId?: string } }>('/maps/admin/config').catch(() => null);
+        const configRes = await apiClient.get<{ apiKey: string; mapId?: string }>('/maps/admin/config').catch(() => null);
         const apiKey = configRes?.data?.apiKey || (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || '';
 
         if (!apiKey) throw new Error('No API key');
@@ -396,7 +399,7 @@ export const AddressPinpointModal: React.FC<AddressPinpointModalProps> = ({
             <span>Use My Current Device GPS</span>
           </Button>
 
-          {addressText && (
+          {targetAddress && (
             <Button
               type="button"
               variant="outline"
