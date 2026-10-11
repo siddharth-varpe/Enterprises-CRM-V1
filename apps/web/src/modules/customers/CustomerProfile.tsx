@@ -19,7 +19,10 @@ import {
   useDeleteCustomerMutation,
   useClearCustomerDataMutation,
   useCustomerActivitiesQuery,
+  type CustomerAddress,
 } from './customer.api';
+import { apiClient } from '../../lib/api-client';
+import { AddressPinpointModal } from '../../components/common/AddressPinpointModal';
 import { usePayments, type PaymentItem } from '../payments/payments.api';
 import { useInvoicesQuery, type InvoiceSummaryData } from '../invoices/invoices.api';
 import { useSalesQuery, type SaleSummaryData } from '../sales/sales.api';
@@ -63,6 +66,7 @@ import {
   Repeat,
   Tag,
   RotateCcw,
+  ExternalLink,
 } from 'lucide-react';
 
 export const CustomerProfile: React.FC = () => {

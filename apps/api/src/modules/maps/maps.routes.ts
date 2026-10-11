@@ -22,6 +22,8 @@ import { memoryCustomers } from '../customers/customer.repository';
 import { memoryJobCards } from '../job-cards/job-cards.repository';
 import { z } from 'zod';
 
+import { GeocodeQuerySchema, UpdateAddressPinpointSchema } from '@crm/validation';
+
 const NavigateRequestSchema = z.object({
   serviceId: z.string().min(1, 'Service ID is required'),
   confirmSwitch: z.boolean().optional(),
@@ -37,6 +39,144 @@ const LocationPingSchema = z.object({
   speed: z.number().nullable().optional(),
   timestamp: z.number().optional(),
 });
+
+/**
+ * Universal Precision Coordinates & Pinpoint Resolver
+ * Resolves exact coordinates from:
+ * 1. Direct numeric coordinates
+ * 2. Coordinate string "18.52043, 73.85674"
+ * 3. Google Maps link (maps.google.com/?q=..., @lat,lng, maps.app.goo.gl redirect, destination=lat,lng)
+ * 4. Geocoding from full address text (OSM Nominatim / Photon)
+ */
+export async function resolvePinpointCoordinates(input: {
+  query?: string;
+  address?: string;
+  url?: string;
+  latitude?: number;
+  longitude?: number;
+}): Promise<{ latitude: number; longitude: number; formattedAddress?: string; source: string } | null> {
+  // 1. Direct coordinates
+  if (typeof input.latitude === 'number' && typeof input.longitude === 'number') {
+    if (!isNaN(input.latitude) && !isNaN(input.longitude) && input.latitude >= -90 && input.latitude <= 90 && input.longitude >= -180 && input.longitude <= 180) {
+      return { latitude: input.latitude, longitude: input.longitude, source: 'EXACT_COORDINATES' };
+    }
+  }
+
+  // 2. Parse text or URL
+  const rawText = (input.url || input.query || input.address || '').trim();
+  if (rawText) {
+    // A. "18.52043, 73.85674" or "18.52043,73.85674"
+    const coordMatch = rawText.match(/^([-+]?[0-9]{1,2}(?:\.[0-9]+)?)[,\s]+([-+]?[0-9]{1,3}(?:\.[0-9]+)?)$/);
+    if (coordMatch) {
+      const lat = parseFloat(coordMatch[1]);
+      const lng = parseFloat(coordMatch[2]);
+      if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return { latitude: lat, longitude: lng, source: 'COORDINATE_INPUT' };
+      }
+    }
+
+    // B. Google Maps URL patterns: q=lat,lng or query=lat,lng or destination=lat,lng
+    const qMatch = rawText.match(/[?&](?:q|destination|query)=([-+]?[0-9]{1,2}(?:\.[0-9]+)?)[,\s]+([-+]?[0-9]{1,3}(?:\.[0-9]+)?)/i);
+    if (qMatch) {
+      const lat = parseFloat(qMatch[1]);
+      const lng = parseFloat(qMatch[2]);
+      if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return { latitude: lat, longitude: lng, source: 'GOOGLE_MAPS_LINK' };
+      }
+    }
+
+    // C. @lat,lng
+    const atMatch = rawText.match(/@([-+]?[0-9]{1,2}(?:\.[0-9]+)?),([-+]?[0-9]{1,3}(?:\.[0-9]+)?)/i);
+    if (atMatch) {
+      const lat = parseFloat(atMatch[1]);
+      const lng = parseFloat(atMatch[2]);
+      if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return { latitude: lat, longitude: lng, source: 'GOOGLE_MAPS_LINK' };
+      }
+    }
+
+    // D. Shortened Google Maps links (e.g. https://maps.app.goo.gl/... or https://goo.gl/maps/...)
+    if (/https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps)\/[A-Za-z0-9_-]+/i.test(rawText)) {
+      try {
+        const resp = await fetch(rawText, { method: 'GET', redirect: 'follow', signal: AbortSignal.timeout(4000) });
+        const finalUrl = resp.url;
+        const expandedQ = finalUrl.match(/[?&](?:q|destination|query)=([-+]?[0-9]{1,2}(?:\.[0-9]+)?)[,\s]+([-+]?[0-9]{1,3}(?:\.[0-9]+)?)/i);
+        if (expandedQ) {
+          const lat = parseFloat(expandedQ[1]);
+          const lng = parseFloat(expandedQ[2]);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            return { latitude: lat, longitude: lng, source: 'EXPANDED_MAPS_LINK' };
+          }
+        }
+        const expandedAt = finalUrl.match(/@([-+]?[0-9]{1,2}(?:\.[0-9]+)?),([-+]?[0-9]{1,3}(?:\.[0-9]+)?)/i);
+        if (expandedAt) {
+          const lat = parseFloat(expandedAt[1]);
+          const lng = parseFloat(expandedAt[2]);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            return { latitude: lat, longitude: lng, source: 'EXPANDED_MAPS_LINK' };
+          }
+        }
+      } catch {}
+    }
+  }
+
+  // 3. Fallback to geocoding services for address text
+  const searchAddress = input.address || input.query || '';
+  if (searchAddress.trim()) {
+    try {
+      const nomRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1`,
+        {
+          headers: { 'User-Agent': 'Enterprises-CRM-Geocoding/1.0' },
+          signal: AbortSignal.timeout(3500),
+        }
+      );
+      if (nomRes.ok) {
+        const data = (await nomRes.json()) as any[];
+        if (data?.[0]?.lat && data?.[0]?.lon) {
+          const lat = parseFloat(data[0].lat);
+          const lng = parseFloat(data[0].lon);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            return {
+              latitude: lat,
+              longitude: lng,
+              formattedAddress: data[0].display_name,
+              source: 'OSM_NOMINATIM',
+            };
+          }
+        }
+      }
+    } catch {}
+
+    try {
+      const photRes = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(searchAddress)}&limit=1`,
+        {
+          headers: { 'User-Agent': 'Enterprises-CRM-Geocoding/1.0' },
+          signal: AbortSignal.timeout(3500),
+        }
+      );
+      if (photRes.ok) {
+        const data = (await photRes.json()) as any;
+        const coords = data?.features?.[0]?.geometry?.coordinates;
+        if (Array.isArray(coords) && coords.length >= 2) {
+          const lng = Number(coords[0]);
+          const lat = Number(coords[1]);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            return {
+              latitude: lat,
+              longitude: lng,
+              formattedAddress: data?.features?.[0]?.properties?.name,
+              source: 'PHOTON_GEOCODING',
+            };
+          }
+        }
+      }
+    } catch {}
+  }
+
+  return null;
+}
 
 /**
  * Maps & Technician Live Tracking Routes Plugin
@@ -59,6 +199,91 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
         apiKey: env.GOOGLE_MAPS_BROWSER_API_KEY || env.MAPS_JAVASCRIPT_API_KEY || '',
         mapId: env.GOOGLE_MAPS_MAP_ID || env.MAP_ID || '',
       },
+    });
+  });
+
+  /**
+   * POST /api/v1/maps/geocode
+   * Resolves precise pinpoint coordinates from address text, coordinate strings, or Google Maps links
+   */
+  fastify.post('/geocode', async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsed = GeocodeQuerySchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(HTTP_STATUS.BAD_REQUEST).send({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: parsed.error.errors[0]?.message || 'Invalid geocode request',
+        },
+      });
+    }
+
+    const resolved = await resolvePinpointCoordinates(parsed.data);
+    if (!resolved) {
+      return reply.status(HTTP_STATUS.NOT_FOUND).send({
+        success: false,
+        error: {
+          code: 'COORDINATES_NOT_FOUND',
+          message: 'Unable to resolve pinpoint coordinates from the provided location data. Please adjust the pin on the map or enter coordinates directly.',
+        },
+      });
+    }
+
+    return reply.send({
+      success: true,
+      data: resolved,
+    });
+  });
+
+  /**
+   * PATCH /api/v1/maps/customer-addresses/:id/pinpoint
+   * Saves exact pinpoint coordinates for a customer address
+   */
+  fastify.patch('/customer-addresses/:id/pinpoint', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = (request.params as any) || {};
+    if (!id) {
+      return reply.status(HTTP_STATUS.BAD_REQUEST).send({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Address identifier is required' },
+      });
+    }
+
+    const parsed = UpdateAddressPinpointSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(HTTP_STATUS.BAD_REQUEST).send({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: parsed.error.errors[0]?.message || 'Invalid pinpoint coordinates',
+        },
+      });
+    }
+
+    const { latitude, longitude } = parsed.data;
+
+    try {
+      await db
+        .update(customerAddresses)
+        .set({ latitude, longitude, updatedAt: new Date() })
+        .where(eq(customerAddresses.id, id));
+    } catch (err: any) {
+      console.warn('[mapsRoutes.pinpoint] DB update notice:', err?.message);
+    }
+
+    // Update in-memory customer addresses if present
+    for (const memCust of memoryCustomers) {
+      if (Array.isArray(memCust.addresses)) {
+        const addr = memCust.addresses.find((a: any) => a.id === id);
+        if (addr) {
+          addr.latitude = latitude;
+          addr.longitude = longitude;
+        }
+      }
+    }
+
+    return reply.send({
+      success: true,
+      data: { id, latitude, longitude },
     });
   });
 
@@ -481,43 +706,11 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
           .filter((q, idx, arr) => q.length > 0 && arr.indexOf(q) === idx);
 
         for (const query of candidateQueries) {
-          try {
-            const nomRes = await fetch(
-              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`,
-              {
-                headers: { 'User-Agent': 'Enterprises-CRM-Geocoding/1.0' },
-                signal: AbortSignal.timeout(3500),
-              }
-            );
-            if (nomRes.ok) {
-              const nomData = (await nomRes.json()) as any[];
-              if (nomData?.[0]?.lat && nomData?.[0]?.lon) {
-                lat = parseFloat(nomData[0].lat);
-                lng = parseFloat(nomData[0].lon);
-                break;
-              }
-            }
-          } catch {}
-
-          if (lat === null || lng === null) {
-            try {
-              const photRes = await fetch(
-                `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`,
-                {
-                  headers: { 'User-Agent': 'Enterprises-CRM-Geocoding/1.0' },
-                  signal: AbortSignal.timeout(3500),
-                }
-              );
-              if (photRes.ok) {
-                const photData = (await photRes.json()) as any;
-                const coords = photData?.features?.[0]?.geometry?.coordinates;
-                if (Array.isArray(coords) && coords.length >= 2) {
-                  lng = Number(coords[0]);
-                  lat = Number(coords[1]);
-                  break;
-                }
-              }
-            } catch {}
+          const resolved = await resolvePinpointCoordinates({ query });
+          if (resolved) {
+            lat = resolved.latitude;
+            lng = resolved.longitude;
+            break;
           }
         }
 
@@ -714,6 +907,99 @@ export const mapsRoutes: FastifyPluginAsync = async (fastify) => {
           },
         });
       }
+    });
+
+    /**
+     * PATCH /api/v1/maps/technician/services/:id/pinpoint
+     * Allows authenticated technician to update the exact customer address pinpoint coordinates for an assigned service
+     */
+    techScope.patch('/technician/services/:id/pinpoint', async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id: serviceId } = (request.params as any) || {};
+      const parsed = UpdateAddressPinpointSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(HTTP_STATUS.BAD_REQUEST).send({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: parsed.error.errors[0]?.message || 'Invalid pinpoint coordinates',
+          },
+        });
+      }
+
+      const technician = request.technician!;
+      const isSuperAdmin = (technician as any).isSuperAdmin === true || technician.technicianId === SUPERADMIN_TECH_ID;
+
+      // Locate service and customer address
+      let serviceRecord: any = null;
+      try {
+        const queryCondition = isSuperAdmin
+          ? eq(services.id, serviceId)
+          : and(eq(services.id, serviceId), eq(services.technicianId, technician.technicianId));
+
+        const [serv] = await db.select().from(services).where(queryCondition).limit(1);
+        serviceRecord = serv;
+      } catch {}
+
+      if (!serviceRecord) {
+        serviceRecord = memoryServices.find((s: any) => s.id === serviceId && (isSuperAdmin || s.technicianId === technician.technicianId));
+      }
+
+      if (!serviceRecord) {
+        return reply.status(HTTP_STATUS.NOT_FOUND).send({
+          success: false,
+          error: { code: 'SERVICE_NOT_FOUND', message: 'Assigned service work order not found.' },
+        });
+      }
+
+      const { latitude, longitude } = parsed.data;
+
+      // Update customer address in DB
+      try {
+        const [addr] = await db
+          .select({ id: customerAddresses.id })
+          .from(customerAddresses)
+          .where(eq(customerAddresses.customerId, serviceRecord.customerId))
+          .orderBy(desc(customerAddresses.isDefault), desc(customerAddresses.createdAt))
+          .limit(1);
+
+        if (addr?.id) {
+          await db
+            .update(customerAddresses)
+            .set({ latitude, longitude, updatedAt: new Date() })
+            .where(eq(customerAddresses.id, addr.id));
+        }
+      } catch (err: any) {
+        console.warn('[technician.pinpoint] DB update notice:', err?.message);
+      }
+
+      // Also update in-memory customers and services
+      const memCust = memoryCustomers.find((c: any) => c.id === serviceRecord.customerId);
+      if (memCust) {
+        memCust.latitude = latitude;
+        memCust.longitude = longitude;
+        if (Array.isArray(memCust.addresses) && memCust.addresses.length > 0) {
+          memCust.addresses[0].latitude = latitude;
+          memCust.addresses[0].longitude = longitude;
+        }
+      }
+      if (serviceRecord) {
+        serviceRecord.latitude = latitude;
+        serviceRecord.longitude = longitude;
+        if (serviceRecord.location) {
+          serviceRecord.location.latitude = latitude;
+          serviceRecord.location.longitude = longitude;
+        }
+      }
+
+      return reply.send({
+        success: true,
+        data: {
+          serviceId,
+          latitude,
+          longitude,
+          googleMapsUrl: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`,
+        },
+      });
     });
 
     /**

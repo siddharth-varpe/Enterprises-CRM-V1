@@ -56,6 +56,8 @@ export const CustomerAddressSchema = z.object({
   pincode: z.string().optional(),
   postalCode: z.string().optional(),
   landmark: z.string().optional().nullable(),
+  latitude: z.preprocess((val) => (val === '' || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
+  longitude: z.preprocess((val) => (val === '' || val === null || val === undefined ? null : Number(val)), z.number().nullable().optional()),
   isDefault: z.boolean().optional(),
 });
 export type CustomerAddressInput = {
@@ -69,6 +71,8 @@ export type CustomerAddressInput = {
   pincode?: string;
   postalCode?: string;
   landmark?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   isDefault?: boolean;
 };
 
@@ -118,6 +122,8 @@ export const CreateCustomerSchema = z
         city: (a?.city || val.city || '').trim(),
         state: (a?.state || val.state || '').trim(),
         postalCode: (a?.postalCode || a?.pincode || val.postalCode || val.pincode || '').trim(),
+        latitude: a?.latitude !== undefined && a?.latitude !== null && !isNaN(Number(a.latitude)) ? Number(a.latitude) : null,
+        longitude: a?.longitude !== undefined && a?.longitude !== null && !isNaN(Number(a.longitude)) ? Number(a.longitude) : null,
       }));
 
     if (addresses.length === 0) {
@@ -129,6 +135,8 @@ export const CreateCustomerSchema = z
           state: (val.state || '').trim(),
           postalCode: (val.postalCode || val.pincode || '').trim(),
           pincode: (val.pincode || val.postalCode || '').trim(),
+          latitude: null,
+          longitude: null,
           isDefault: true,
           type: 'BOTH',
           addressType: 'SERVICE',
@@ -201,6 +209,21 @@ export const UpdateCustomerSchema = z
     addresses: z.array(CustomerAddressSchema).optional(),
   });
 export type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
+
+export const GeocodeQuerySchema = z.object({
+  query: z.string().optional(),
+  address: z.string().optional(),
+  url: z.string().optional(),
+  latitude: z.preprocess((v) => (v !== undefined && v !== null && v !== '' ? Number(v) : undefined), z.number().optional()),
+  longitude: z.preprocess((v) => (v !== undefined && v !== null && v !== '' ? Number(v) : undefined), z.number().optional()),
+});
+export type GeocodeQueryInput = z.infer<typeof GeocodeQuerySchema>;
+
+export const UpdateAddressPinpointSchema = z.object({
+  latitude: z.preprocess((v) => Number(v), z.number().min(-90).max(90)),
+  longitude: z.preprocess((v) => Number(v), z.number().min(-180).max(180)),
+});
+export type UpdateAddressPinpointInput = z.infer<typeof UpdateAddressPinpointSchema>;
 
 export const CustomerQueryFilterSchema = PaginationQuerySchema.extend({
   sortBy: z.string().default('customerNumber').optional(),

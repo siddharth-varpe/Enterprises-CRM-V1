@@ -95,7 +95,7 @@ export interface TechnicianTrackingContextValue {
   dismissConflictModal: () => void;
   closeConflictModal?: () => void;
   confirmSwitchDestination: () => void;
-  navigate: (serviceId: string, confirmSwitch?: boolean) => Promise<{ success?: boolean; conflict?: boolean; error?: string; googleMapsUrl?: string }>;
+  navigate: (serviceId: string, confirmSwitch?: boolean, skipWindowOpen?: boolean) => Promise<{ success?: boolean; conflict?: boolean; error?: string; googleMapsUrl?: string }>;
   stopTracking: () => Promise<void>;
   requestPermission: () => Promise<boolean>;
   startBrowserWatch: (serviceId?: string) => void;
@@ -715,7 +715,7 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
 
   // Navigate trigger action
   const handleNavigate = useCallback(
-    async (targetServiceId: string, confirmSwitch = false) => {
+    async (targetServiceId: string, confirmSwitch = false, skipWindowOpen = false) => {
       setState((prev) => ({ ...prev, error: null, trackingStatus: 'NAVIGATION_STARTING' }));
 
       // 1. Verify Secure Context & Geolocation API Availability
@@ -860,8 +860,8 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
           }
         }
 
-        // Open Google Maps external navigation URL
-        if (json.googleMapsUrl) {
+        // Open Google Maps external navigation URL (if not already opened by synchronous user gesture)
+        if (json.googleMapsUrl && !skipWindowOpen) {
           window.open(json.googleMapsUrl, '_blank', 'noopener,noreferrer');
         }
 
@@ -931,7 +931,7 @@ function useTrackingInternal(currentServiceId?: string, isProvider = false): Tec
         handleNavigate(nextId, true);
       }
     },
-    navigate: (serviceId: string, confirmSwitch = false) => handleNavigate(serviceId, confirmSwitch),
+    navigate: (serviceId: string, confirmSwitch = false, skipWindowOpen = false) => handleNavigate(serviceId, confirmSwitch, skipWindowOpen),
     stopTracking: handleStopTracking,
     requestPermission,
     startBrowserWatch,
@@ -969,7 +969,7 @@ export function useTechnicianTracking(currentServiceId?: string) {
       isThisServiceActive: Boolean(
         currentServiceId && context.state.isNavigating && context.state.activeServiceId === currentServiceId
       ),
-      navigate: (serviceId: string, confirmSwitch = false) => context.navigate(serviceId, confirmSwitch),
+      navigate: (serviceId: string, confirmSwitch = false, skipWindowOpen = false) => context.navigate(serviceId, confirmSwitch, skipWindowOpen),
       stopTracking: context.stopTracking,
       requestPermission: context.requestPermission,
       startBrowserWatch: context.startBrowserWatch,

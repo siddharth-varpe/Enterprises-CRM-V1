@@ -14,7 +14,8 @@ import {
   checkCustomerDuplicateApi,
   type CustomerSummary,
 } from '../customer.api';
-import { AlertCircle, User, Phone, Mail, Building, Plus, Trash2, MapPin } from 'lucide-react';
+import { AlertCircle, User, Phone, Mail, Building, Plus, Trash2, MapPin, Crosshair, Navigation } from 'lucide-react';
+import { AddressPinpointModal } from '../../../components/common/AddressPinpointModal';
 
 export interface CustomerFormModalProps {
   isOpen: boolean;
@@ -55,6 +56,8 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           state: a.state || '',
           postalCode: a.postalCode || (a as any).pincode || '',
           isDefault: a.isDefault ?? true,
+          latitude: typeof a.latitude === 'number' ? a.latitude : (a as any)?.latitude ? Number((a as any).latitude) : null,
+          longitude: typeof a.longitude === 'number' ? a.longitude : (a as any)?.longitude ? Number((a as any).longitude) : null,
         }))
       : [
           {
@@ -66,6 +69,8 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
             state: '',
             postalCode: '',
             isDefault: true,
+            latitude: null,
+            longitude: null,
           },
         ],
   });
@@ -76,12 +81,15 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
     control,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateCustomerInput>({
     resolver: zodResolver(CreateCustomerSchema) as any,
     defaultValues: getInitialValues(customer),
     shouldUnregister: false,
   });
+
+  const [pinpointModalIndex, setPinpointModalIndex] = useState<number | null>(null);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -306,6 +314,8 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
                   state: '',
                   postalCode: '',
                   isDefault: false,
+                  latitude: null,
+                  longitude: null,
                 });
               }}
               leftIcon={<Plus className="w-3.5 h-3.5" />}
@@ -315,74 +325,137 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           </div>
 
           <div className="space-y-4">
-            {fields.map((field, idx) => (
-              <div
-                key={field.id}
-                className="p-4 rounded-btn border border-slate-200 bg-slate-50/50 space-y-3 relative"
-              >
-                {fields.length > 1 && (
-                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/70">
-                    <span className="text-xs font-semibold text-slate-700">
-                      Address #{idx + 1}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => remove(idx)}
-                      className="p-1 text-slate-400 hover:text-rose-600 rounded flex items-center gap-1 text-xs font-medium transition-colors"
-                      aria-label={`Remove address ${idx + 1}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Remove</span>
-                    </button>
+            {fields.map((field, idx) => {
+              const currentLat = watch(`addresses.${idx}.latitude`);
+              const currentLng = watch(`addresses.${idx}.longitude`);
+              const hasPinpoint =
+                currentLat !== null &&
+                currentLat !== undefined &&
+                currentLng !== null &&
+                currentLng !== undefined &&
+                !isNaN(Number(currentLat)) &&
+                !isNaN(Number(currentLng));
+
+              return (
+                <div
+                  key={field.id}
+                  className="p-4 rounded-btn border border-slate-200 bg-slate-50/50 space-y-3 relative"
+                >
+                  {fields.length > 1 && (
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-200/70">
+                      <span className="text-xs font-semibold text-slate-700">
+                        Address #{idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => remove(idx)}
+                        className="p-1 text-slate-400 hover:text-rose-600 rounded flex items-center gap-1 text-xs font-medium transition-colors"
+                        aria-label={`Remove address ${idx + 1}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Remove</span>
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      label="Address Line 1"
+                      placeholder="House/Plot/Flat No., Street, Area"
+                      leftIcon={<MapPin className="w-4 h-4 text-slate-400" />}
+                      error={errors.addresses?.[idx]?.addressLine1?.message}
+                      {...register(`addresses.${idx}.addressLine1`)}
+                    />
+
+                    <Input
+                      label="Address Line 2 (Optional)"
+                      placeholder="Apartment, Wing, Colony"
+                      error={errors.addresses?.[idx]?.addressLine2?.message}
+                      {...register(`addresses.${idx}.addressLine2`)}
+                    />
+
+                    <Input
+                      label="Landmark (Optional)"
+                      placeholder="Near landmark or prominent spot"
+                      error={errors.addresses?.[idx]?.landmark?.message}
+                      {...register(`addresses.${idx}.landmark`)}
+                    />
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <Input
+                        label="City"
+                        placeholder="e.g. Pune"
+                        error={errors.addresses?.[idx]?.city?.message}
+                        {...register(`addresses.${idx}.city`)}
+                      />
+                      <Input
+                        label="State"
+                        placeholder="e.g. Maharashtra"
+                        error={errors.addresses?.[idx]?.state?.message}
+                        {...register(`addresses.${idx}.state`)}
+                      />
+                      <Input
+                        label="Pincode"
+                        placeholder="e.g. 411001"
+                        error={errors.addresses?.[idx]?.postalCode?.message}
+                        {...register(`addresses.${idx}.postalCode`)}
+                      />
+                    </div>
                   </div>
-                )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Input
-                    label="Address Line 1"
-                    placeholder="House/Plot/Flat No., Street, Area"
-                    leftIcon={<MapPin className="w-4 h-4 text-slate-400" />}
-                    error={errors.addresses?.[idx]?.addressLine1?.message}
-                    {...register(`addresses.${idx}.addressLine1`)}
-                  />
+                  {/* Precision Pinpoint Controls */}
+                  <div className="pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-2 bg-white/70 p-2.5 rounded-lg border border-slate-200/70">
+                    <div className="flex items-center gap-2">
+                      {hasPinpoint ? (
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-800 font-medium">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mr-1.5 animate-pulse" />
+                            Precise Pinpoint Set
+                          </span>
+                          <span className="font-mono text-[11px] text-slate-600 hidden sm:inline">
+                            ({Number(currentLat).toFixed(5)}, {Number(currentLng).toFixed(5)})
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-xs text-amber-800 font-medium">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                            Approximate Area (No Pinpoint)
+                          </span>
+                          <span className="text-[11px] text-slate-400 hidden sm:inline">
+                            Technician navigation will search postal/city name
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
-                  <Input
-                    label="Address Line 2 (Optional)"
-                    placeholder="Apartment, Wing, Colony"
-                    error={errors.addresses?.[idx]?.addressLine2?.message}
-                    {...register(`addresses.${idx}.addressLine2`)}
-                  />
-
-                  <Input
-                    label="Landmark (Optional)"
-                    placeholder="Near landmark or prominent spot"
-                    error={errors.addresses?.[idx]?.landmark?.message}
-                    {...register(`addresses.${idx}.landmark`)}
-                  />
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input
-                      label="City"
-                      placeholder="e.g. Pune"
-                      error={errors.addresses?.[idx]?.city?.message}
-                      {...register(`addresses.${idx}.city`)}
-                    />
-                    <Input
-                      label="State"
-                      placeholder="e.g. Maharashtra"
-                      error={errors.addresses?.[idx]?.state?.message}
-                      {...register(`addresses.${idx}.state`)}
-                    />
-                    <Input
-                      label="Pincode"
-                      placeholder="e.g. 411001"
-                      error={errors.addresses?.[idx]?.postalCode?.message}
-                      {...register(`addresses.${idx}.postalCode`)}
-                    />
+                    <div className="flex items-center gap-2">
+                      {hasPinpoint && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${Number(currentLat)},${Number(currentLng)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-1 text-xs text-slate-600 hover:text-slate-900 border border-slate-200 rounded-md hover:bg-slate-50 transition-colors inline-flex items-center gap-1"
+                        >
+                          <span>Test Pin</span>
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setPinpointModalIndex(idx)}
+                        className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                          hasPinpoint
+                            ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300'
+                            : 'bg-primary-50 hover:bg-primary-100 text-primary-700 border-primary-200'
+                        }`}
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-primary-600" />
+                        <span>{hasPinpoint ? 'Adjust Pinpoint' : 'Pinpoint on Map'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -399,6 +472,31 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           />
         </div>
       </form>
+
+      {pinpointModalIndex !== null && (
+        <AddressPinpointModal
+          isOpen={true}
+          onClose={() => setPinpointModalIndex(null)}
+          initialLatitude={watch(`addresses.${pinpointModalIndex}.latitude`)}
+          initialLongitude={watch(`addresses.${pinpointModalIndex}.longitude`)}
+          addressContext={[
+            watch(`addresses.${pinpointModalIndex}.addressLine1`),
+            watch(`addresses.${pinpointModalIndex}.addressLine2`),
+            watch(`addresses.${pinpointModalIndex}.landmark`),
+            watch(`addresses.${pinpointModalIndex}.city`),
+            watch(`addresses.${pinpointModalIndex}.state`),
+            watch(`addresses.${pinpointModalIndex}.postalCode`),
+          ]
+            .filter(Boolean)
+            .join(', ')}
+          title={`Pinpoint Location for Address #${pinpointModalIndex + 1}`}
+          onSave={(coords) => {
+            setValue(`addresses.${pinpointModalIndex}.latitude`, coords.latitude, { shouldDirty: true });
+            setValue(`addresses.${pinpointModalIndex}.longitude`, coords.longitude, { shouldDirty: true });
+            toast.success('Address coordinates saved.');
+          }}
+        />
+      )}
     </Modal>
   );
 };

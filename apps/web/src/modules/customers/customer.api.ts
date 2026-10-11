@@ -17,6 +17,8 @@ export interface CustomerAddress {
   city: string;
   state: string;
   postalCode: string;
+  latitude?: number | null;
+  longitude?: number | null;
   isDefault: boolean;
 }
 
