@@ -141,19 +141,13 @@ The Admin Portal provides dense, informative, high-contrast operational dashboar
 | **Sales Directory** | ![Sales Directory](docs/screenshots/admin/04-sales-directory.png) | Comprehensive sales register displaying Quotations, Confirmed Orders, Fulfilled Deals, and payment status badges. |
 | **Sale Order Creation** | ![Create Sale Order](docs/screenshots/admin/05-sale-create.png) | Multi-item order configuration with live pricing, discount calculation, GST tax splitting, and customer selection. |
 | **GST Tax Invoices Register** | ![Invoices Directory](docs/screenshots/admin/gst_tax_invoices_register.png) | Status-filtered invoice table (PAID, PARTIAL, ISSUED, OVERDUE) with total taxable value and due dates. |
-| **Invoice Detail & Audit View** | ![Invoice Details](docs/screenshots/admin/07-invoice-detail.png) | Full tax breakdown with HSN/SAC codes, CGST/SGST rates, payment transaction history, and public link generation. |
-| **Public Customer Invoice View** | ![Public Invoice View](docs/screenshots/admin/25-public-invoice-view.png) | Public read-only client invoice view with printable layout, bank details, UPI QR code, and PDF download action. |
 | **Payments & Collections** | ![Payments Directory](docs/screenshots/admin/payments_and_collections.png) | Transaction ledger recording Cash, UPI, and Bank Transfer receipts with invoice cross-referencing and reconciliation. |
-| **Customer Dues & Balance Ledger** | ![Dues Ledger](docs/screenshots/admin/customer_dues_balance_ledger.png) | Aging accounts receivable ledger tracking overdue customer balances with direct payment reminder actions. |
 
 #### Field Service, Job Cards & Workforce Operations
 
 | Module View | Relative Screenshot Link | Verified Functional Elements |
 | :--- | :--- | :--- |
-| **Customer Assets Register** | ![Assets Directory](docs/screenshots/admin/09-assets-directory.png) | Comprehensive inventory of customer-installed equipment, serial numbers, warranty coverage, and maintenance dates. |
 | **Services Directory** | ![Services Directory](docs/screenshots/admin/10-services-directory.png) | Dispatch log for Installation, Preventive Maintenance, Repair, and Breakdown service requests. |
-| **Service Request Detail** | ![Service Detail](docs/screenshots/admin/11-service-detail.png) | Priority badge, customer address, assigned technician, reported issue description, and job card status. |
-| **Job Cards Operations Register** | ![Job Cards Directory](docs/screenshots/admin/12-job-cards-directory.png) | Field execution register tracking job card progress: ASSIGNED, IN_PROGRESS, COMPLETED, and CANCELLED. |
 | **Job Card Detail View** | ![Job Card Detail](docs/screenshots/admin/job_card_detail.png) | Technician task checklist, spare parts consumed table, customer complaint resolution notes, and final billing total. |
 | **Technicians Roster** | ![Technicians Roster](docs/screenshots/admin/technicians_roster.png) | Field engineer team management, skill matrix, mobile numbers, active assignment counts, and portal access toggles. |
 | **Technician Profile & Work History** | ![Technician Profile](docs/screenshots/admin/16-technician-profile.png) | Individual technician metrics, lifetime completed job cards, current active workload, and direct contact options. |
@@ -165,7 +159,6 @@ The Admin Portal provides dense, informative, high-contrast operational dashboar
 | :--- | :--- | :--- |
 | **Machine Rentals Management** | ![Rentals Management](docs/screenshots/admin/14-rentals-management.png) | Subscription purifier agreements, monthly rental cycles, deposit tracking, and scheduled maintenance. |
 | **Inventory & Spare Parts** | ![Inventory Management](docs/screenshots/admin/19-inventory-management.png) | Stock level tracking for RO membranes, booster pumps, sediment filters, valves, reorder alerts, and unit costs. |
-| **Reminders & Operational Tasks** | ![Reminders & Tasks](docs/screenshots/admin/20-reminders-tasks.png) | Automated follow-up task queues for upcoming filter replacements, AMC renewals, and payment collections. |
 | **Reports & Business Analytics** | ![Reports & Analytics](docs/screenshots/admin/22-reports-analytics.png) | Monthly sales summaries, revenue charts, service completion rates, and technician performance metrics. |
 | **System Settings & Configuration** | ![System Settings](docs/screenshots/admin/24-system-settings.png) | Company profile, GSTIN configuration, banking details, numbering format rules, and user management. |
 
