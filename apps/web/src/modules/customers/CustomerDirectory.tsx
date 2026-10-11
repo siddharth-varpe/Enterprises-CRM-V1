@@ -45,8 +45,8 @@ export const CustomerDirectory: React.FC = () => {
     customerType: customerTypeFilter !== 'ALL' ? (customerTypeFilter as any) : undefined,
     customerLabel: customerLabelFilter !== 'ALL' ? (customerLabelFilter as any) : undefined,
     city: cityFilter !== 'ALL' ? cityFilter : undefined,
-    sortBy: 'customerNumber',
-    sortOrder: 'asc',
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
   });
 
   // Query aggregated customer stats from live CRM database

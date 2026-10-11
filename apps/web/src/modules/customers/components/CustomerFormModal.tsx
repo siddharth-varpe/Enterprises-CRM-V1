@@ -203,7 +203,8 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
             Cancel
           </Button>
           <Button
-            type="button"
+            type="submit"
+            form="customer-form"
             variant="primary"
             size="md"
             onClick={handleSubmit(onSubmit, onInvalid)}
@@ -215,7 +216,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
         </>
       }
     >
-      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
+      <form id="customer-form" onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
         {/* Duplicate Customer Alert Banner */}
         {duplicateWarning && (
           <div role="alert" className="p-3 bg-amber-50 border border-amber-200 rounded-btn flex items-start gap-2.5 text-xs text-amber-900">
@@ -259,7 +260,10 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
               leftIcon={<Mail className="w-4 h-4" />}
               error={errors.email?.message}
               {...register('email')}
-              onBlur={handleCheckDuplicateEmail}
+              onBlur={(e) => {
+                register('email').onBlur(e);
+                handleCheckDuplicateEmail();
+              }}
             />
 
             <Select

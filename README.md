@@ -99,7 +99,7 @@ Enterprises CRM exposes three distinct portals and application surfaces from the
 
 | Portal / Interface | Access Route | Target Roles | Primary Functionality | Authentication Method | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Admin & Operational CRM** | `/` & `/dashboard` | `SUPER_ADMIN`, `ADMIN`, `MANAGER`, `STAFF` | Complete CRM operations: Customer Directory, Sales Orders, GST Invoices, Payments, Assets, Service Dispatches, Job Cards, Inventory, Rentals, WhatsApp Hub, Reports, and System Settings. | Username / Password + Captcha + HTTP-only JWT Cookie | **Implemented & Verified** |
+| **Admin & Operational CRM** | `/` & `/dashboard` | `SUPER_ADMIN`, `ADMIN`, `MANAGER`, `STAFF` | Complete CRM operations: Customer Directory, Sales Orders, GST Invoices, Payments, Assets, Service Dispatches, Job Cards, Inventory, Rentals, Reports, and System Settings. | Username / Password + Captcha + HTTP-only JWT Cookie | **Implemented & Verified** |
 | **Technician Field Portal (PWA)** | `/technician` | `TECHNICIAN`, `SUPER_ADMIN` | Mobile-optimized field engineer hub: Today's Jobs, Assigned Services, Service Details, Step-by-Step Job Card Execution, Active Navigation, Work History, and Device Tracking. | 6-Digit Email/SMS OTP Verification + Secure Session Cookie | **Implemented & Verified** |
 | **Public Invoice & Receipt Viewer** | `/invoice/view/:id` | `PUBLIC`, `CUSTOMER` | Customer-facing read-only tax invoice view with printable PDF export, QR-code verification, breakdown of GST taxes, and outstanding balance summary. | Tokenized UUID / Direct Link (No Login Required) | **Implemented & Verified** |
 
@@ -140,11 +140,11 @@ The Admin Portal provides dense, informative, high-contrast operational dashboar
 | :--- | :--- | :--- |
 | **Sales Directory** | ![Sales Directory](docs/screenshots/admin/04-sales-directory.png) | Comprehensive sales register displaying Quotations, Confirmed Orders, Fulfilled Deals, and payment status badges. |
 | **Sale Order Creation** | ![Create Sale Order](docs/screenshots/admin/05-sale-create.png) | Multi-item order configuration with live pricing, discount calculation, GST tax splitting, and customer selection. |
-| **GST Tax Invoices Register** | ![Invoices Directory](docs/screenshots/admin/06-invoice-directory.png) | Status-filtered invoice table (PAID, PARTIAL, ISSUED, OVERDUE) with total taxable value and due dates. |
+| **GST Tax Invoices Register** | ![Invoices Directory](docs/screenshots/admin/gst_tax_invoices_register.png) | Status-filtered invoice table (PAID, PARTIAL, ISSUED, OVERDUE) with total taxable value and due dates. |
 | **Invoice Detail & Audit View** | ![Invoice Details](docs/screenshots/admin/07-invoice-detail.png) | Full tax breakdown with HSN/SAC codes, CGST/SGST rates, payment transaction history, and public link generation. |
 | **Public Customer Invoice View** | ![Public Invoice View](docs/screenshots/admin/25-public-invoice-view.png) | Public read-only client invoice view with printable layout, bank details, UPI QR code, and PDF download action. |
-| **Payments & Collections** | ![Payments Directory](docs/screenshots/admin/08-payments-directory.png) | Transaction ledger recording Cash, UPI, and Bank Transfer receipts with invoice cross-referencing and reconciliation. |
-| **Customer Dues & Balance Ledger** | ![Dues Ledger](docs/screenshots/admin/18-dues-ledger.png) | Aging accounts receivable ledger tracking overdue customer balances with direct payment reminder actions. |
+| **Payments & Collections** | ![Payments Directory](docs/screenshots/admin/payments_and_collections.png) | Transaction ledger recording Cash, UPI, and Bank Transfer receipts with invoice cross-referencing and reconciliation. |
+| **Customer Dues & Balance Ledger** | ![Dues Ledger](docs/screenshots/admin/customer_dues_balance_ledger.png) | Aging accounts receivable ledger tracking overdue customer balances with direct payment reminder actions. |
 
 #### Field Service, Job Cards & Workforce Operations
 
@@ -154,10 +154,10 @@ The Admin Portal provides dense, informative, high-contrast operational dashboar
 | **Services Directory** | ![Services Directory](docs/screenshots/admin/10-services-directory.png) | Dispatch log for Installation, Preventive Maintenance, Repair, and Breakdown service requests. |
 | **Service Request Detail** | ![Service Detail](docs/screenshots/admin/11-service-detail.png) | Priority badge, customer address, assigned technician, reported issue description, and job card status. |
 | **Job Cards Operations Register** | ![Job Cards Directory](docs/screenshots/admin/12-job-cards-directory.png) | Field execution register tracking job card progress: ASSIGNED, IN_PROGRESS, COMPLETED, and CANCELLED. |
-| **Job Card Detail View** | ![Job Card Detail](docs/screenshots/admin/13-job-card-detail.png) | Technician task checklist, spare parts consumed table, customer complaint resolution notes, and final billing total. |
-| **Technicians Roster** | ![Technicians Roster](docs/screenshots/admin/15-technicians-roster.png) | Field engineer team management, skill matrix, mobile numbers, active assignment counts, and portal access toggles. |
+| **Job Card Detail View** | ![Job Card Detail](docs/screenshots/admin/job_card_detail.png) | Technician task checklist, spare parts consumed table, customer complaint resolution notes, and final billing total. |
+| **Technicians Roster** | ![Technicians Roster](docs/screenshots/admin/technicians_roster.png) | Field engineer team management, skill matrix, mobile numbers, active assignment counts, and portal access toggles. |
 | **Technician Profile & Work History** | ![Technician Profile](docs/screenshots/admin/16-technician-profile.png) | Individual technician metrics, lifetime completed job cards, current active workload, and direct contact options. |
-| **Admin Live Technician Map** | ![Admin Live Map](docs/screenshots/admin/17-live-map.png) | Interactive Google Map showing Pune service regions, active technician dispatch list, and navigation status telemetry. |
+| **Admin Live Technician Map** | ![Admin Live Map](docs/screenshots/admin/admin_live_technician_map.png) | Interactive Google Map showing Pune service regions, active technician dispatch list, and navigation status telemetry. |
 
 #### Equipment Rentals, Inventory & Administration
 
@@ -166,9 +166,7 @@ The Admin Portal provides dense, informative, high-contrast operational dashboar
 | **Machine Rentals Management** | ![Rentals Management](docs/screenshots/admin/14-rentals-management.png) | Subscription purifier agreements, monthly rental cycles, deposit tracking, and scheduled maintenance. |
 | **Inventory & Spare Parts** | ![Inventory Management](docs/screenshots/admin/19-inventory-management.png) | Stock level tracking for RO membranes, booster pumps, sediment filters, valves, reorder alerts, and unit costs. |
 | **Reminders & Operational Tasks** | ![Reminders & Tasks](docs/screenshots/admin/20-reminders-tasks.png) | Automated follow-up task queues for upcoming filter replacements, AMC renewals, and payment collections. |
-| **WhatsApp Business Hub** | ![WhatsApp Hub](docs/screenshots/admin/21-whatsapp-hub.png) | Pre-configured message templates for service booking confirmations, technician arrival alerts, and invoice delivery. |
 | **Reports & Business Analytics** | ![Reports & Analytics](docs/screenshots/admin/22-reports-analytics.png) | Monthly sales summaries, revenue charts, service completion rates, and technician performance metrics. |
-| **Notifications Center** | ![Notifications Center](docs/screenshots/admin/23-notifications-center.png) | Operational alert center for overdue job cards, inventory low-stock alerts, and technician status changes. |
 | **System Settings & Configuration** | ![System Settings](docs/screenshots/admin/24-system-settings.png) | Company profile, GSTIN configuration, banking details, numbering format rules, and user management. |
 
 ---
@@ -194,7 +192,6 @@ The Technician Portal is tailored specifically for field engineers operating on 
 | Mobile View | Relative Screenshot Link | Description |
 | :--- | :--- | :--- |
 | **Mobile Technician Dashboard** | ![Mobile Dashboard](docs/screenshots/technician/mobile-01-dashboard.png) | Touch-first mobile layout with quick status cards, persistent bottom navigation bar, and one-tap job access. |
-| **Mobile Service Detail View** | ![Mobile Service Detail](docs/screenshots/technician/mobile-02-service-detail.png) | Compact mobile view featuring direct phone call triggers, customer address navigation, and job start buttons. |
 | **Mobile Field Navigation** | ![Mobile Navigation](docs/screenshots/technician/mobile-03-navigation.png) | Full-screen mobile Google Maps routing card with customer destination details and directions fallback. |
 
 ---
@@ -417,13 +414,7 @@ The Enterprises CRM platform is structured into **24 core functional modules**:
 - **Service Recalls:** Automated reminders for 3-month and 6-month sediment filter replacements and membrane flushing.
 - **Payment Reminders:** Scheduled tasks to follow up on overdue customer balances.
 
-### 15. WhatsApp Business Integration Hub (`/whatsapp`)
-- **Communication Templates:** Quick message generators for service booking confirmation, technician on-the-way alerts, and invoice delivery.
-
-### 16. Notifications Center (`/notifications`)
-- **System Alerts:** Centralized feed for inventory shortages, overdue job cards, and new service assignments.
-
-### 17. System Settings & Customization (`/settings`)
+### 15. System Settings & Customization (`/settings`)
 - **Enterprise Identity:** Company name, registered address, GSTIN, contact numbers, and bank account details.
 - **Numbering Engine:** Configurable prefixes and zero-padding for Invoices (`INV-2026-XXXX`), Sales Orders (`SO-2026-XXXX`), and Job Cards (`JC-2026-XXXX`).
 

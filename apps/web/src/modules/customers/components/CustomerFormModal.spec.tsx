@@ -4,16 +4,22 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CustomerFormModal } from './CustomerFormModal';
 import { ToastProvider } from '../../../providers/ToastProvider';
 
+const mockCreateMutateAsync = vi.fn().mockResolvedValue({
+  id: 'cust-new-123',
+  customerNumber: 'CX-11102601',
+  fullName: 'Rajesh Kumar',
+});
+
 vi.mock('../customer.api', async (importOriginal) => {
   const actual: any = await importOriginal();
   return {
     ...actual,
     useCreateCustomerMutation: () => ({
-      mutateAsync: vi.fn(),
+      mutateAsync: mockCreateMutateAsync,
       isPending: false,
     }),
     useUpdateCustomerMutation: () => ({
-      mutateAsync: vi.fn(),
+      mutateAsync: vi.fn().mockResolvedValue({ id: 'cust-edit-1', fullName: 'Updated' }),
       isPending: false,
     }),
     checkCustomerDuplicateApi: vi.fn().mockResolvedValue({
@@ -23,6 +29,7 @@ vi.mock('../customer.api', async (importOriginal) => {
     }),
   };
 });
+
 
 describe('CustomerFormModal Component', () => {
   const queryClient = new QueryClient({
@@ -161,4 +168,68 @@ describe('CustomerFormModal Component', () => {
     fireEvent.change(addrInput, { target: { value: 'Office 202' } });
     expect(screen.getByDisplayValue('Office 202')).toBeInTheDocument();
   });
+
+  it('submits create customer form when Create Customer button is clicked', async () => {
+    const handleSuccess = vi.fn();
+    const handleClose = vi.fn();
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ToastProvider>
+          <CustomerFormModal
+            isOpen={true}
+            onClose={handleClose}
+            onSuccess={handleSuccess}
+          />
+        </ToastProvider>
+      </QueryClientProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Test Customer' } });
+    fireEvent.change(screen.getByLabelText(/Phone Number/i), { target: { value: '9876543210' } });
+    fireEvent.change(screen.getByLabelText(/Address Line 1/i), { target: { value: '123 MG Road' } });
+    fireEvent.change(screen.getByLabelText(/City/i), { target: { value: 'Pune' } });
+    fireEvent.change(screen.getByLabelText(/State/i), { target: { value: 'Maharashtra' } });
+    fireEvent.change(screen.getByLabelText(/Pincode/i), { target: { value: '411001' } });
+
+    const submitBtn = screen.getByText('Create Customer');
+    fireEvent.click(submitBtn);
+
+    const { waitFor } = await import('@testing-library/react');
+    await waitFor(() => {
+      expect(mockCreateMutateAsync).toHaveBeenCalled();
+    });
+    expect(handleSuccess).toHaveBeenCalled();
+    expect(handleClose).toHaveBeenCalled();
+  });
+
+  it('submits create customer form with only name and phone (blank address)', async () => {
+    const handleSuccess = vi.fn();
+    const handleClose = vi.fn();
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ToastProvider>
+          <CustomerFormModal
+            isOpen={true}
+            onClose={handleClose}
+            onSuccess={handleSuccess}
+          />
+        </ToastProvider>
+      </QueryClientProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Minimal Customer' } });
+    fireEvent.change(screen.getByLabelText(/Phone Number/i), { target: { value: '9876543210' } });
+
+    const submitBtn = screen.getByText('Create Customer');
+    fireEvent.click(submitBtn);
+
+    const { waitFor } = await import('@testing-library/react');
+    await waitFor(() => {
+      expect(mockCreateMutateAsync).toHaveBeenCalled();
+    });
+    expect(handleSuccess).toHaveBeenCalled();
+    expect(handleClose).toHaveBeenCalled();
+  });
 });
+
+

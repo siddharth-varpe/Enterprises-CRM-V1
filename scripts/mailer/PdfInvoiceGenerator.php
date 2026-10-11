@@ -212,7 +212,7 @@ class PdfInvoiceGenerator {
 <html>
 <head>
 <meta charset="utf-8">
-<title>Official Bill / Receipt - SR Enterprises</title>
+<title>Official Bill / Receipt - Enterprises CRM</title>
 <style>
     @page {
         size: A4 portrait;
@@ -291,10 +291,10 @@ class PdfInvoiceGenerator {
     <table class="header-table">
         <tr>
             <td style="width: 70px; vertical-align: middle; text-align: center;">
-                <img src="{$logoSvg}" style="width: 60px; height: 60px; object-fit: contain;" alt="SR Enterprises Logo" />
+                <img src="{$logoSvg}" style="width: 60px; height: 60px; object-fit: contain;" alt="Enterprises CRM Logo" />
             </td>
             <td style="text-align: center; vertical-align: middle; padding: 0 10px;">
-                <div style="font-size: 19px; font-weight: bold; color: #000; letter-spacing: 0.5px; line-height: 1.1;">SR ENTERPRISES</div>
+                <div style="font-size: 19px; font-weight: bold; color: #000; letter-spacing: 0.5px; line-height: 1.1;">ENTERPRISES CRM</div>
                 <div style="font-size: 8px; color: #111; margin-top: 2px; font-weight: 500;">
                     Shop A6 SaiPritam Nagari, Chatrapati Chowk Rahatani. Mo.7385059197
                 </div>
@@ -443,11 +443,11 @@ HTML;
             <circle cx="50" cy="50" r="41" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.5" stroke-dasharray="2,2"/>
             <circle cx="50" cy="50" r="36" fill="#f8fafc" stroke="#1d4ed8" stroke-width="1"/>
             <path id="curveTop" d="M 20 50 A 30 30 0 0 1 80 50" fill="none"/>
-            <text font-family="Arial, Helvetica, sans-serif" font-size="7.5" font-weight="bold" fill="#1d4ed8" text-anchor="middle">
-                <textPath href="#curveTop" startOffset="50%">SR ENTERPRISES</textPath>
+            <text font-family="Arial, Helvetica, sans-serif" font-size="7" font-weight="bold" fill="#1d4ed8" text-anchor="middle">
+                <textPath href="#curveTop" startOffset="50%">ENTERPRISES CRM</textPath>
             </text>
             <circle cx="50" cy="50" r="22" fill="#1d4ed8"/>
-            <text x="50" y="56" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="900" fill="#ffffff" text-anchor="middle">SR</text>
+            <text x="50" y="56" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle">CRM</text>
             <path d="M 50 28 C 47 34 44 38 44 41 C 44 44.5 46.5 47 50 47 C 53.5 47 56 44.5 56 41 C 56 38 53 34 50 28 Z" fill="#60a5fa" opacity="0.85"/>
         </svg>';
         return 'data:image/svg+xml;base64,' . base64_encode($svg);

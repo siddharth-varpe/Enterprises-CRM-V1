@@ -124,7 +124,7 @@ describe('InvoiceDetailPage Component & Print Isolation', () => {
     expect(screen.getAllByText('INV-2026-0001').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Aarav Sharma/i)).toBeDefined();
     expect(screen.getByText('Commercial RO System 50 LPH')).toBeDefined();
-    expect(screen.getByText('SR ENTERPRISES')).toBeDefined();
+    expect(screen.getByText('ENTERPRISES CRM')).toBeDefined();
 
     // Trigger Print
     const printBtn = screen.getByText('Print Invoice');

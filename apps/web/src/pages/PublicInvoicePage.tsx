@@ -242,7 +242,7 @@ export const PublicInvoicePage: React.FC = () => {
           )}
         </div>
 
-        {/* Printable SR ENTERPRISES Invoice / Bill of Supply */}
+        {/* Printable ENTERPRISES CRM Invoice / Bill of Supply */}
         <div className="overflow-x-auto pb-2 -mx-1 sm:mx-0 print:overflow-visible print:m-0 print:p-0">
           <div
             id="printable-tax-invoice"
@@ -268,7 +268,7 @@ export const PublicInvoicePage: React.FC = () => {
 
               <div className="text-center flex-1 px-2">
                 <h1 className="text-xl font-extrabold tracking-wide uppercase text-black font-sans">
-                  SR ENTERPRISES
+                  ENTERPRISES CRM
                 </h1>
                 <p className="text-[10px] text-slate-800 font-medium mt-0.5">
                   Shop A6 SaiPritam Nagari, Chatrapati Chowk Rahatani. Mo.7385059197

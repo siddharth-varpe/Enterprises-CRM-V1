@@ -78,24 +78,22 @@ async function main() {
       ['/customers/00000000-0000-0000-0000-000000000001', 'admin/customer_profile.png', 2500],
       ['/sales', 'admin/04-sales-directory.png', 2000],
       ['/sales/new', 'admin/05-sale-create.png', 2000],
-      ['/invoices', 'admin/06-invoice-directory.png', 2000],
+      ['/invoices', 'admin/gst_tax_invoices_register.png', 2000],
       ['/invoices/00000000-0000-0000-0000-000000001101', 'admin/07-invoice-detail.png', 2500],
-      ['/payments', 'admin/08-payments-directory.png', 2000],
+      ['/payments', 'admin/payments_and_collections.png', 2000],
       ['/assets', 'admin/09-assets-directory.png', 2000],
       ['/services', 'admin/10-services-directory.png', 2000],
       ['/services/00000000-0000-0000-0000-000000001201', 'admin/11-service-detail.png', 2500],
       ['/job-cards', 'admin/12-job-cards-directory.png', 2000],
-      ['/job-cards/00000000-0000-0000-0000-000000001301', 'admin/13-job-card-detail.png', 2500],
+      ['/job-cards/00000000-0000-0000-0000-000000001301', 'admin/job_card_detail.png', 2500],
       ['/rent', 'admin/14-rentals-management.png', 2000],
-      ['/technicians', 'admin/15-technicians-roster.png', 2000],
+      ['/technicians', 'admin/technicians_roster.png', 2000],
       ['/technicians/00000000-0000-0000-0000-000000000099', 'admin/16-technician-profile.png', 2500],
-      ['/technicians/map', 'admin/17-live-map.png', 4000],
-      ['/dues', 'admin/18-dues-ledger.png', 2000],
+      ['/technicians/map', 'admin/admin_live_technician_map.png', 4000],
+      ['/dues', 'admin/customer_dues_balance_ledger.png', 2000],
       ['/inventory', 'admin/19-inventory-management.png', 2000],
       ['/reminders', 'admin/20-reminders-tasks.png', 2000],
-      ['/whatsapp', 'admin/21-whatsapp-hub.png', 2000],
       ['/reports', 'admin/22-reports-analytics.png', 2500],
-      ['/notifications', 'admin/23-notifications-center.png', 2000],
       ['/settings', 'admin/24-system-settings.png', 2000],
       ['/invoice/view/00000000-0000-0000-0000-000000001101', 'admin/25-public-invoice-view.png', 2500],
     ];
@@ -197,10 +195,6 @@ async function main() {
     await mobilePage.waitForTimeout(3000);
 
     await snapMobile('technician/mobile-01-dashboard.png');
-
-    await mobilePage.goto('http://127.0.0.1:3000/technician/services/00000000-0000-0000-0000-000000001201', { waitUntil: 'commit' });
-    await mobilePage.waitForTimeout(2500);
-    await snapMobile('technician/mobile-02-service-detail.png');
 
     await mobilePage.goto('http://127.0.0.1:3000/technician/navigation', { waitUntil: 'commit' });
     await mobilePage.waitForTimeout(3500);

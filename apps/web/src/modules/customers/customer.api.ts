@@ -153,8 +153,8 @@ export function useCustomerStatsQuery() {
  */
 export function useCustomersQuery(filters: CustomerQueryFilterInput) {
   const effectiveFilters: CustomerQueryFilterInput = {
-    sortBy: 'customerNumber',
-    sortOrder: 'asc',
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
     ...filters,
   };
 
