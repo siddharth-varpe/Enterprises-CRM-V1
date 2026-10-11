@@ -132,7 +132,7 @@ The Admin Portal provides dense, informative, high-contrast operational dashboar
 | :--- | :--- | :--- |
 | **Main Operational Dashboard** | ![Admin Dashboard](docs/screenshots/admin/01-dashboard.png) | Real-time metric cards (Total Sales, Revenue Collected, Outstanding Dues, Active Job Cards), revenue trends, and operational workload queues. |
 | **Customer Directory** | ![Customer Directory](docs/screenshots/admin/02-customer-directory.png) | Multi-criteria customer search, Pune city area filters, contact badges, total asset counts, and quick action drawers. |
-| **Customer Profile & 360° History** | ![Customer Profile](docs/screenshots/admin/03-customer-profile.png) | Complete customer view with installed machines, historical sales orders, open job cards, payment history, and GPS pinpoints. |
+| **Customer Profile & 360° History** | ![Customer Profile](docs/screenshots/admin/customer_profile.png) | Complete customer view with installed machines, historical sales orders, open job cards, payment history, and GPS pinpoints. |
 
 #### Sales, Invoicing & Financial Operations
 

@@ -75,7 +75,7 @@ async function main() {
     const adminRoutes: [string, string, number?][] = [
       ['/dashboard', 'admin/01-dashboard.png', 2500],
       ['/customers', 'admin/02-customer-directory.png', 2000],
-      ['/customers/00000000-0000-0000-0000-000000000001', 'admin/03-customer-profile.png', 2500],
+      ['/customers/00000000-0000-0000-0000-000000000001', 'admin/customer_profile.png', 2500],
       ['/sales', 'admin/04-sales-directory.png', 2000],
       ['/sales/new', 'admin/05-sale-create.png', 2000],
       ['/invoices', 'admin/06-invoice-directory.png', 2000],
