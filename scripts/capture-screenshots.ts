@@ -82,13 +82,13 @@ async function main() {
       ['/payments', 'admin/payments_and_collections.png', 2000],
       ['/services', 'admin/10-services-directory.png', 2000],
       ['/job-cards/00000000-0000-0000-0000-000000001301', 'admin/job_card_detail.png', 2500],
-      ['/rent', 'admin/14-rentals-management.png', 2000],
+      ['/rent', 'admin/machine_rentals_management.png', 2000],
       ['/technicians', 'admin/technicians_roster.png', 2000],
-      ['/technicians/00000000-0000-0000-0000-000000000099', 'admin/16-technician-profile.png', 2500],
+      ['/technicians/00000000-0000-0000-0000-000000000099', 'admin/technician_profile.png', 2500],
       ['/technicians/map', 'admin/admin_live_technician_map.png', 4000],
       ['/inventory', 'admin/19-inventory-management.png', 2000],
       ['/reports', 'admin/22-reports-analytics.png', 2500],
-      ['/settings', 'admin/24-system-settings.png', 2000],
+      ['/settings', 'admin/system_settings_configuration.png', 2000],
     ];
 
     for (const [route, file, wait] of adminRoutes) {
@@ -139,7 +139,6 @@ async function main() {
     const techRoutes: [string, string, number?][] = [
       ['/technician', 'technician/01-technician-dashboard.png', 2500],
       ['/technician/services', 'technician/02-assigned-services.png', 2000],
-      ['/technician/services/00000000-0000-0000-0000-000000001201', 'technician/03-service-detail.png', 2500],
       ['/technician/navigation', 'technician/04-service-navigation.png', 3500],
       ['/technician/completed-services', 'technician/05-job-completion.png', 2000],
       ['/technician/profile', 'technician/06-profile.png', 2000],

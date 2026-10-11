@@ -150,17 +150,17 @@ The Admin Portal provides dense, informative, high-contrast operational dashboar
 | **Services Directory** | ![Services Directory](docs/screenshots/admin/10-services-directory.png) | Dispatch log for Installation, Preventive Maintenance, Repair, and Breakdown service requests. |
 | **Job Card Detail View** | ![Job Card Detail](docs/screenshots/admin/job_card_detail.png) | Technician task checklist, spare parts consumed table, customer complaint resolution notes, and final billing total. |
 | **Technicians Roster** | ![Technicians Roster](docs/screenshots/admin/technicians_roster.png) | Field engineer team management, skill matrix, mobile numbers, active assignment counts, and portal access toggles. |
-| **Technician Profile & Work History** | ![Technician Profile](docs/screenshots/admin/16-technician-profile.png) | Individual technician metrics, lifetime completed job cards, current active workload, and direct contact options. |
+| **Technician Profile & Work History** | ![Technician Profile](docs/screenshots/admin/technician_profile.png) | Individual technician metrics, lifetime completed job cards, current active workload, and direct contact options. |
 | **Admin Live Technician Map** | ![Admin Live Map](docs/screenshots/admin/admin_live_technician_map.png) | Interactive Google Map showing Pune service regions, active technician dispatch list, and navigation status telemetry. |
 
 #### Equipment Rentals, Inventory & Administration
 
 | Module View | Relative Screenshot Link | Verified Functional Elements |
 | :--- | :--- | :--- |
-| **Machine Rentals Management** | ![Rentals Management](docs/screenshots/admin/14-rentals-management.png) | Subscription purifier agreements, monthly rental cycles, deposit tracking, and scheduled maintenance. |
+| **Machine Rentals Management** | ![Rentals Management](docs/screenshots/admin/machine_rentals_management.png) | Subscription purifier agreements, monthly rental cycles, deposit tracking, and scheduled maintenance. |
 | **Inventory & Spare Parts** | ![Inventory Management](docs/screenshots/admin/19-inventory-management.png) | Stock level tracking for RO membranes, booster pumps, sediment filters, valves, reorder alerts, and unit costs. |
 | **Reports & Business Analytics** | ![Reports & Analytics](docs/screenshots/admin/22-reports-analytics.png) | Monthly sales summaries, revenue charts, service completion rates, and technician performance metrics. |
-| **System Settings & Configuration** | ![System Settings](docs/screenshots/admin/24-system-settings.png) | Company profile, GSTIN configuration, banking details, numbering format rules, and user management. |
+| **System Settings & Configuration** | ![System Settings](docs/screenshots/admin/system_settings_configuration.png) | Company profile, GSTIN configuration, banking details, numbering format rules, and user management. |
 
 ---
 
@@ -174,7 +174,6 @@ The Technician Portal is tailored specifically for field engineers operating on 
 | :--- | :--- | :--- |
 | **Technician Workspace Dashboard** | ![Technician Dashboard](docs/screenshots/technician/01-technician-dashboard.png) | Personalized field home showing Today's Assigned Jobs, current workload metrics, and GPS status indicator. |
 | **Assigned Services Queue** | ![Assigned Services](docs/screenshots/technician/02-assigned-services.png) | Comprehensive service list sorted by priority, scheduled time, and customer address. |
-| **Service Details & Execution** | ![Technician Service Detail](docs/screenshots/technician/03-service-detail.png) | Customer contact details, address pinpoint, equipment model, fault description, and Navigate action. |
 | **Live Route Navigation Map** | ![Technician Navigation](docs/screenshots/technician/04-service-navigation.png) | Integrated Google Maps view displaying customer destination coordinates in Pune with route guidance. |
 | **Completed Work & Service History** | ![Completed Services](docs/screenshots/technician/05-job-completion.png) | Historical archive of completed job cards, parts used, and customer sign-off timestamps. |
 | **Technician Profile & Settings** | ![Technician Profile](docs/screenshots/technician/06-profile.png) | Field engineer profile, mobile number, assigned territory, and app session controls. |
