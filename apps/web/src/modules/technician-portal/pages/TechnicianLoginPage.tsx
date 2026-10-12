@@ -17,6 +17,7 @@ import {
 import {
   TECHNICIAN_PORTAL_ROUTE_PREFIX,
   TECHNICIAN_AUTH_API_PREFIX,
+  APP_RELEASE_NAME,
 } from '@crm/shared';
 import { apiClient } from '../../../lib/api-client';
 import { CRM_OFFICIAL_LOGO_B64 } from '../../../assets/invoiceAssets';
@@ -436,9 +437,12 @@ export const TechnicianLoginPage: React.FC = () => {
           )}
 
           {/* Security badge footer */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-center space-x-1.5 text-slate-500 text-xs">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Encrypted Session • Role-Scoped Access</span>
+          <div className="pt-4 border-t border-slate-100 flex flex-col items-center justify-center space-y-1 text-slate-500 text-xs">
+            <div className="flex items-center space-x-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Encrypted Session • Role-Scoped Access</span>
+            </div>
+            <span className="text-[11px] text-slate-400 font-medium">{APP_RELEASE_NAME}</span>
           </div>
         </div>
       </div>

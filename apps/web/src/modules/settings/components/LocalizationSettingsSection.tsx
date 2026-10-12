@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Globe, Save, RotateCcw, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useCategorySettingsQuery, useUpdateSettingsMutation, useResetSettingsMutation } from '../settings.api';
 import type { SystemSettings } from '@crm/types';
+import { APP_VERSION } from '@crm/shared';
 import { useToast } from '../../../providers/ToastProvider';
 
 export const LocalizationSettingsSection: React.FC = () => {
@@ -12,7 +13,7 @@ export const LocalizationSettingsSection: React.FC = () => {
 
   const [form, setForm] = useState<SystemSettings>({
     appName: 'Enterprises CRM',
-    appVersion: '1.0.0',
+    appVersion: APP_VERSION,
     timezone: 'Asia/Kolkata',
     currency: 'INR',
     currencySymbol: '₹',

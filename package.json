@@ -1,6 +1,6 @@
 {
   "name": "sr-enterprises-crm",
-  "version": "0.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Enterprises CRM - Commercial-grade SaaS for sales, service, warranty & job card management",
   "packageManager": "pnpm@9.15.4",

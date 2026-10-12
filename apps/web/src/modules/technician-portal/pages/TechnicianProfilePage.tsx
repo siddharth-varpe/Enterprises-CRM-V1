@@ -14,6 +14,7 @@ import {
 import { apiClient } from '../../../lib/api-client';
 import { useTechnicianAuth } from '../guards/TechnicianAuthGuard';
 import type { Technician360ResponseData } from '@crm/types';
+import { APP_RELEASE_NAME } from '@crm/shared';
 
 export const TechnicianProfilePage: React.FC = () => {
   const { technician: authTech, logout } = useTechnicianAuth();
@@ -284,6 +285,13 @@ export const TechnicianProfilePage: React.FC = () => {
           <LogOut className="w-4 h-4" />
           <span>Logout Technician Session</span>
         </button>
+      </div>
+
+      {/* Version & Platform Metadata */}
+      <div className="pt-2 pb-6 text-center">
+        <p className="text-[11px] font-mono text-slate-400">
+          {APP_RELEASE_NAME} • Technician Operations Portal
+        </p>
       </div>
     </div>
   );

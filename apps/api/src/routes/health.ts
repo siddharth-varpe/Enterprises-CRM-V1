@@ -3,6 +3,7 @@ import type { HealthCheckResponse, ReadinessCheckResponse } from '@crm/types';
 import { checkDatabaseHealth } from '../database/health.js';
 import { checkRedisHealth } from '../redis/health.js';
 import { env } from '../config/env.js';
+import { APP_VERSION } from '@crm/shared';
 
 export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   /**
@@ -14,7 +15,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
       timestamp: new Date().toISOString(),
       uptimeSeconds: Math.floor(process.uptime()),
       environment: env.NODE_ENV,
-      version: '0.1.0',
+      version: APP_VERSION,
     };
     return reply.status(200).send(response);
   });

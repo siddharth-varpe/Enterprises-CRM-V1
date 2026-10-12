@@ -8,7 +8,7 @@ describe('BackupValidator Unit Tests', () => {
   const validManifest: BackupManifestDTO = {
     backupId: 'BACKUP-1234567890',
     createdAt: new Date().toISOString(),
-    srmVersion: '1.0.0',
+    srmVersion: '1.2.0',
     databaseSchemaVersion: 1,
     backupFormatVersion: '1.0.0',
     backupType: 'FULL',

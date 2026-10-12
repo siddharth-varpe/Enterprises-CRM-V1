@@ -86,7 +86,7 @@ The system serves four primary user classes:
 ### 1.4 Product Metadata Disclosure
 - **Official Product Name:** Enterprises CRM
 - **Product Release Version:** `1.2.0`
-- **Internal Monorepo Descriptor:** Notice that `package.json` manifests across `apps/api` and `apps/web` declare `"version": "0.1.0"` representing internal pre-release monorepo package milestones, while the official commercial release milestone is **v1.2.0 (2026)**.
+- **Internal Monorepo Descriptor:** All workspace manifests (`package.json`, `apps/web`, `apps/api`, `apps/desktop`, and `packages/*`) are unified and synchronised to version **1.2.0**, reflecting the authoritative commercial release milestone **v1.2.0 (2026)**.
 - **Lead Developers:** Siddharth & Kartik
 - **Development Timeline:** 2 Months of intensive full-stack engineering
 - **Operating Status:** Implemented and functional across all core portals.

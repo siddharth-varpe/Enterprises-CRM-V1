@@ -3,11 +3,12 @@ import { render, screen } from '@testing-library/react';
 import { GlobalFooter } from './GlobalFooter';
 
 describe('GlobalFooter Component', () => {
-  it('renders "Developed by Kartik & Siddharth" branding text', () => {
+  it('renders "Developed by Kartik & Siddharth" branding text and version', () => {
     render(<GlobalFooter />);
     const footer = screen.getByRole('contentinfo');
     expect(footer).toBeInTheDocument();
     expect(footer).toHaveTextContent('Developed by Kartik & Siddharth');
+    expect(footer).toHaveTextContent('Enterprises CRM v1.2.0');
   });
 
   it('includes semantic contentinfo role and print:hidden class', () => {

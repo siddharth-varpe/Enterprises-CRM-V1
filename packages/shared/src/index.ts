@@ -2,6 +2,10 @@
  * SR Enterprises CRM - Shared Constants & System Configurations
  */
 
+export const APP_NAME = 'Enterprises CRM';
+export const APP_VERSION = '1.2.0';
+export const APP_RELEASE_NAME = 'Enterprises CRM v1.2.0';
+
 export const API_PREFIX = '/api/v1';
 
 export const HTTP_STATUS = {

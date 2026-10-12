@@ -22,6 +22,7 @@ import type {
   PublicSettingsResponse,
   SettingsHealthResponse,
 } from '@crm/types';
+import { APP_VERSION } from '@crm/shared';
 
 // ============================================================
 // ZOD VALIDATION SCHEMAS PER CATEGORY
@@ -172,7 +173,7 @@ export const CategoryValidators: Record<SettingsCategory, z.ZodTypeAny> = {
 export const SYSTEM_DEFAULTS: Record<SettingsCategory, any> = {
   SYSTEM: {
     appName: 'Enterprises CRM',
-    appVersion: '1.0.0',
+    appVersion: APP_VERSION,
     timezone: 'Asia/Kolkata',
     currency: 'INR',
     currencySymbol: '₹',

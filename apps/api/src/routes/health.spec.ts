@@ -21,7 +21,7 @@ describe('Health and Readiness Routes', () => {
     expect(json.status).toBe('ok');
     expect(json.environment).toBeDefined();
     expect(json.timestamp).toBeDefined();
-    expect(json.version).toBe('0.1.0');
+    expect(json.version).toBe('1.2.0');
   });
 
   it('GET /ready should return 200 when database and redis are connected', async () => {

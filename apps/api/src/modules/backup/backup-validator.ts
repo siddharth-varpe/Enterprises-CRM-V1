@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import type { BackupManifestDTO, BackupInspectionReport } from '@crm/types';
+import { APP_VERSION } from '@crm/shared';
 
 export const CURRENT_BACKUP_FORMAT_VERSION = '1.0.0';
-export const CURRENT_SRM_VERSION = '1.0.0';
+export const CURRENT_SRM_VERSION = APP_VERSION;
 export const CURRENT_SCHEMA_VERSION = 1;
 
 export class BackupValidator {
